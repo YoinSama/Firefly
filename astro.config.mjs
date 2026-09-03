@@ -354,7 +354,15 @@ export default defineConfig({
 		plugins: [tailwindcss()],
 		server: {
 			watch: {
-				ignored: ["**/package/**", "**/Firefly-docs/**"],
+				ignored: [
+					"**/package/**",
+					"**/Firefly-docs/**",
+					// 拦截 astro-icon 在 Windows 上拼出的双盘符畸形路径（如 D:\D:\...），
+					// 避免 chokidar 回退去监听整个 D 盘根目录而崩在 System Volume Information
+					(watchPath) =>
+						typeof watchPath === "string" &&
+						/^[A-Za-z]:[\\/][A-Za-z]:/.test(watchPath),
+				],
 			},
 		},
 		resolve: {
