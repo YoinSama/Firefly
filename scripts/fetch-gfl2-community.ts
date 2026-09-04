@@ -18,6 +18,13 @@ import { gfl2CommunityConfig } from "../src/config/gfl2CommunityConfig";
 
 const OUTPUT_FILE = path.resolve("src/constants/gfl2-community.json");
 
+/**
+ * public 副本：供博客浏览器端轮询 fetchedAt 作为「新版本已上线」信号
+ * （配合 about 页刷新按钮：触发 CF Deploy Hook 重建后，轮询该文件的 fetchedAt
+ *   比页面渲染值新，即判定构建完成、自动 reload）。随构建产物一起部署。
+ */
+const PUBLIC_COPY = path.resolve("public/gfl2-community.json");
+
 interface Gfl2CommunityStage {
 	name?: string;
 	stage_name?: string;
@@ -60,6 +67,18 @@ function resolveApiKey(): string {
 	return "";
 }
 
+/** 同一份数据写入 src/constants 与 public 两个位置（public 副本可能失败但不影响主文件） */
+async function persist(file: Gfl2CommunityFile): Promise<void> {
+	await fs.mkdir(path.dirname(OUTPUT_FILE), { recursive: true });
+	await fs.writeFile(OUTPUT_FILE, JSON.stringify(file, null, 2), "utf-8");
+	try {
+		await fs.mkdir(path.dirname(PUBLIC_COPY), { recursive: true });
+		await fs.writeFile(PUBLIC_COPY, JSON.stringify(file, null, 2), "utf-8");
+	} catch (e: any) {
+		console.warn(`[fetch-gfl2-community] public 副本写入失败（不影响主文件）：${e?.message || e}`);
+	}
+}
+
 async function writeEmpty(reason: string, enabled: boolean): Promise<void> {
 	const file: Gfl2CommunityFile = {
 		fetchedAt: new Date().toISOString(),
@@ -68,8 +87,7 @@ async function writeEmpty(reason: string, enabled: boolean): Promise<void> {
 		message: reason,
 		data: EMPTY_DATA,
 	};
-	await fs.mkdir(path.dirname(OUTPUT_FILE), { recursive: true });
-	await fs.writeFile(OUTPUT_FILE, JSON.stringify(file, null, 2), "utf-8");
+	await persist(file);
 	console.warn(`[fetch-gfl2-community] ${reason}（已写入空结构，构建不会阻塞）`);
 }
 
@@ -145,8 +163,7 @@ async function fetchAndWrite(): Promise<void> {
 		},
 	};
 
-	await fs.mkdir(path.dirname(OUTPUT_FILE), { recursive: true });
-	await fs.writeFile(OUTPUT_FILE, JSON.stringify(file, null, 2), "utf-8");
+	await persist(file);
 	console.log(
 		`[fetch-gfl2-community] 已写入 ${heroList.length} 个人形 / ${Object.keys(file.data.stage_info ?? {}).length} 个战绩分组到 ${OUTPUT_FILE}`,
 	);
@@ -167,4 +184,4 @@ if (isMain) {
 	});
 }
 
-export { fetchAndWrite, OUTPUT_FILE };
+export { fetchAndWrite, OUTPUT_FILE, PUBLIC_COPY };

@@ -11,6 +11,8 @@ public/vndb-covers/
 # 含 fetchedAt 时间戳与个人游戏资料快照，不入 git；
 # 启用 GFL2 后本地/CI 自己跑 `pnpm fetch:gfl2` 即可（也已在 pnpm build 前置）。
 src/constants/gfl2-community.json
+# public 副本：浏览器轮询"新版已上线"信号的信号文件，属构建产物
+public/gfl2-community.json
 
 # vite/esbuild 构建残留临时目录（safe-delete 拦截时常滞留，强制忽略）
 _tmp_*/
