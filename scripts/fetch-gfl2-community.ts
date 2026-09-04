@@ -148,7 +148,7 @@ async function fetchAndWrite(): Promise<void> {
 	await fs.mkdir(path.dirname(OUTPUT_FILE), { recursive: true });
 	await fs.writeFile(OUTPUT_FILE, JSON.stringify(file, null, 2), "utf-8");
 	console.log(
-		`[fetch-gfl2-community] 已写入 ${heroList.length} 个人形 / ${Object.keys(file.data.stage_info).length} 个战绩分组到 ${OUTPUT_FILE}`,
+		`[fetch-gfl2-community] 已写入 ${heroList.length} 个人形 / ${Object.keys(file.data.stage_info ?? {}).length} 个战绩分组到 ${OUTPUT_FILE}`,
 	);
 }
 

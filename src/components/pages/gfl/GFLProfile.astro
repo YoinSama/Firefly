@@ -2,14 +2,25 @@
 import { gfl2CommunityConfig } from "@/config/gfl2CommunityConfig";
 import gfl2Community from "@/constants/gfl2-community.json";
 
+/**
+ * 少女前线2：追放 游戏资料卡片（about 页底部）。
+ *
+ * 视觉风格对齐 gf2bbsapi 管理页的官方社区样式：
+ *  - 人形：横向滚动立绘条，皮肤/立绘铺满卡片，右上椎体徽章(SVG 叠数字)，底部 lv 橙色字
+ *  - 战绩：整幅横条图 + 右侧叠加文字；周常歧路横向滚动，其余玩法战绩网格
+ *  - 主题：缩略图 + 完成度角标（折叠展开）
+ */
+
 interface StageItem {
 	name?: string;
 	stage_name?: string;
 	complete_percent?: number;
+	max_score?: number;
 	show_pic?: string;
 	case_id?: number;
 	stay_stage?: number;
 	stage_code?: string;
+	stage_rank?: string;
 }
 
 interface Gfl2CommunityFile {
@@ -26,7 +37,7 @@ interface Gfl2CommunityFile {
 	};
 }
 
-const file = gfl2Community as Gfl2CommunityFile;
+const file = gfl2Community as unknown as Gfl2CommunityFile;
 const cfg = gfl2CommunityConfig;
 const t = (k: keyof NonNullable<typeof cfg.i18n>): string => cfg.i18n?.[k] ?? "";
 
@@ -34,32 +45,46 @@ const data = file.data ?? {};
 const user = data.user_info ?? {};
 const base = data.base_info ?? {};
 const heroes = (data.hero_list ?? []).slice(0, cfg.limits?.heroCount ?? 8);
-const stages = data.stage_info ?? {};
-const themes = data.theme_info ?? [];
+const themes = (data.theme_info ?? []).slice(0, 12);
 
-// stage_info 各分组按业务顺序展示（周常歧路优先）
-const STAGE_ORDER: Array<{ key: string; label: string }> = [
-	{ key: "week_common", label: "周常·常规歧路" },
-	{ key: "week_special", label: "周常·特殊歧路" },
-	{ key: "dark_zone", label: "异位冲突" },
-	{ key: "endless_tower", label: "迭代回廊" },
-	{ key: "guild_battle", label: "尘烟前线" },
-	{ key: "guildwar_point", label: "拓界征途" },
-	{ key: "kuobian_stage", label: "扩编实练" },
-	{ key: "sim_combat", label: "模拟战" },
-	{ key: "tower_stage", label: "哨塔" },
-	{ key: "rouge_season", label: "更迭流转" },
-];
-
-function pct(v: number | undefined): string {
-	if (typeof v !== "number") return "—";
-	if (v >= 10000) return `${(v / 10000).toFixed(1)}万`;
-	return v.toLocaleString();
+/** 展平 stage_info：数组拆开、对象保留，带原键名便于特判 */
+function flattenStages(si: any): { key: string; item: StageItem }[] {
+	const out: { key: string; item: StageItem }[] = [];
+	for (const [k, v] of Object.entries(si || {})) {
+		if (Array.isArray(v)) for (const it of v) out.push({ key: k, item: it as StageItem });
+		else if (v && typeof v === "object") out.push({ key: k, item: v as StageItem });
+	}
+	return out;
 }
 
-function fmtPercent(v: number | undefined): string {
-	if (typeof v !== "number") return "—";
-	return `${v}%`;
+/** 单条战绩 → 指标文案（stage_name 优先，无则按字段猜指标名） */
+function stageCaption(s: { key: string; item: StageItem }): string {
+	const it = s.item;
+	const has = (x: any) => x !== null && x !== undefined && x !== "";
+	if (has(it.stage_name)) {
+		let val = "";
+		if (has(it.complete_percent))
+			val = String(it.complete_percent) + (s.key === "tower_stage" ? "%" : "");
+		else if (has(it.max_score)) val = String(it.max_score);
+		else if (has(it.stay_stage)) val = "停留 " + String(it.stay_stage);
+		return val ? `${it.stage_name} ${val}` : String(it.stage_name);
+	}
+	const pairs: string[] = [];
+	if (has(it.max_score)) pairs.push(`最高积分 ${it.max_score}`);
+	if (has(it.stage_rank)) pairs.push(`段位 ${it.stage_rank}`);
+	if (has(it.complete_percent)) pairs.push(`完成度 ${it.complete_percent}%`);
+	if (has(it.stay_stage)) pairs.push(`停留关卡 ${it.stay_stage}`);
+	return pairs.join(" · ") || it.stage_code || "";
+}
+
+/** 战绩分组：周常（week_common + week_special）横向滚动；其余玩法战绩网格 */
+const allStages = flattenStages(data.stage_info);
+const weekStages = allStages.filter((s) => s.key.startsWith("week_"));
+const otherStages = allStages.filter((s) => !s.key.startsWith("week_"));
+
+/** kuobian_stage 等：仅在有 stage_code 时显示代码徽章（避免与 stageCaption 文案重复） */
+function codeChip(s: { key: string; item: StageItem }): string {
+	return s.item.stage_code || "";
 }
 
 function fmtTime(iso: string): string {
@@ -69,28 +94,30 @@ function fmtTime(iso: string): string {
 		return iso;
 	}
 }
+
+function pct(v: number | undefined): string {
+	if (typeof v !== "number") return "—";
+	if (v >= 10000) return `${(v / 10000).toFixed(1)}万`;
+	return v.toLocaleString();
+}
 ---
 
 {cfg.enable && (
 	<div class="card-base not-prose gfl2-card p-6 md:p-8 mt-6">
 		<header class="gfl2-head">
-			<div>
-				<h3 class="gfl2-title">少女前线2：追放 · 游戏资料</h3>
-				<p class="gfl2-sub">
-					{t("lastUpdated")} <time datetime={file.fetchedAt}>{fmtTime(file.fetchedAt)}</time>
-				</p>
-			</div>
+			<h3 class="gfl2-title">少女前线2：追放 · 游戏资料</h3>
+			<p class="gfl2-sub">
+				{t("lastUpdated")} <time datetime={file.fetchedAt}>{fmtTime(file.fetchedAt)}</time>
+			</p>
 		</header>
 
 		{!file.ok ? (
-			<p class="gfl2-empty">
-				{file.message || t("fetchFailed")}
-			</p>
+			<p class="gfl2-empty">{file.message || t("fetchFailed")}</p>
 		) : (
 			<>
-				{/* 基础信息 */}
-				<section class="gfl2-section">
-					<div class="gfl2-userline">
+				{/* 基础资料：头像 + 昵称/公会/等级 */}
+				<section class="gfl2-profile">
+					<div class="gfl2-profile-head">
 						{user.avatar && (
 							<img
 								src={String(user.avatar)}
@@ -100,121 +127,138 @@ function fmtTime(iso: string): string {
 								loading="lazy"
 							/>
 						)}
-						<div class="gfl2-user-meta">
+						<div>
 							<div class="gfl2-name">
-								<span class="gfl2-nick">{user.nick_name ?? "—"}</span>
+								<span class="gfl2-nick">{user.nick_name ?? "未知用户"}</span>
 								<span class="gfl2-uid">#{user.game_uid ?? user.uid ?? "?"}</span>
 							</div>
-							<div class="gfl2-row">
-								<span class="gfl2-tag">{t("level")} <b>{user.level ?? "—"}</b></span>
-								{user.guild_name && (
-									<span class="gfl2-tag">{t("guild")} <b>{user.guild_name}</b></span>
-								)}
+							<div class="gfl2-subline">
+								{user.guild_name && <span class="gfl2-muted">公会：{user.guild_name}</span>}
+								{user.level && <span class="gfl2-muted">指挥等级：{user.level}</span>}
 							</div>
 						</div>
 					</div>
-
 					<div class="gfl2-stats">
-						<div class="gfl2-stat">
-							<span class="gfl2-stat-val">{pct(base.achievement_count as number)}</span>
-							<span class="gfl2-stat-label">{t("achievement")}</span>
-						</div>
-						<div class="gfl2-stat">
-							<span class="gfl2-stat-val">{pct(base.active_days as number)}</span>
-							<span class="gfl2-stat-label">{t("activeDays")}</span>
-						</div>
-						<div class="gfl2-stat">
-							<span class="gfl2-stat-val">{pct(base.hero_count as number)}</span>
-							<span class="gfl2-stat-label">{t("heroCount")}</span>
-						</div>
-						<div class="gfl2-stat">
-							<span class="gfl2-stat-val">{pct(base.skin_count as number)}</span>
-							<span class="gfl2-stat-label">{t("skinCount")}</span>
-						</div>
-						<div class="gfl2-stat">
-							<span class="gfl2-stat-val">{pct(base.weapon_count as number)}</span>
-							<span class="gfl2-stat-label">{t("weaponCount")}</span>
-						</div>
-						<div class="gfl2-stat">
-							<span class="gfl2-stat-val">{base.main_stage ?? "—"}</span>
-							<span class="gfl2-stat-label">{t("mainStage")}</span>
-						</div>
+						{base.main_stage && (
+							<div class="gfl2-stat"><span class="gfl2-stat-val">{base.main_stage}</span><span class="gfl2-stat-label">主线进度</span></div>
+						)}
+						{base.hero_count != null && (
+							<div class="gfl2-stat"><span class="gfl2-stat-val">{pct(base.hero_count as number)}</span><span class="gfl2-stat-label">人形</span></div>
+						)}
+						{base.active_days != null && (
+							<div class="gfl2-stat"><span class="gfl2-stat-val">{pct(base.active_days as number)}</span><span class="gfl2-stat-label">活跃天数</span></div>
+						)}
+						{base.skin_count != null && (
+							<div class="gfl2-stat"><span class="gfl2-stat-val">{pct(base.skin_count as number)}</span><span class="gfl2-stat-label">皮肤</span></div>
+						)}
+						{base.weapon_count != null && (
+							<div class="gfl2-stat"><span class="gfl2-stat-val">{pct(base.weapon_count as number)}</span><span class="gfl2-stat-label">武器</span></div>
+						)}
+						{base.achievement_count != null && (
+							<div class="gfl2-stat"><span class="gfl2-stat-val">{pct(base.achievement_count as number)}</span><span class="gfl2-stat-label">成就</span></div>
+						)}
 					</div>
 				</section>
 
-				{/* 常用人形 */}
+				{/* 人形展示：横向滚动立绘条（官方社区样式） */}
 				{heroes.length > 0 && (
 					<section class="gfl2-section">
-						<h4 class="gfl2-h4">{t("heroesTitle")}</h4>
-						<div class="gfl2-heroes">
+						<h4 class="gfl2-h4">人形展示<span class="gfl2-h4-note">公开的前 {heroes.length} 名</span></h4>
+						<div class="gfl2-dolls">
 							{heroes.map((h: any) => (
-								<div class="gfl2-hero" title={`${h.name ?? ""} · Lv.${h.lv ?? "?"} · ${h.duty ?? ""}`}>
-									<div class="gfl2-hero-pic">
-										{h.show_pic && (
-											<img
-												src={h.show_pic}
-												alt={h.name ?? "hero"}
-												referrerpolicy="no-referrer"
-												loading="lazy"
-											/>
-										)}
-									</div>
-									<div class="gfl2-hero-meta">
-										<span class="gfl2-hero-name">{h.name ?? "—"}</span>
-										<span class="gfl2-hero-lv">Lv.{h.lv ?? "?"}</span>
-									</div>
+								<div
+									class="gfl2-doll"
+									title={`${h.name ?? ""} · lv.${h.lv ?? "?"}` + (h.grade != null && h.grade !== "" ? ` · 椎体 ${h.grade}` : "")}
+								>
+									{h.skin || h.show_pic ? (
+										<img
+											src={h.skin || h.show_pic}
+											alt={h.name ?? "hero"}
+											loading="lazy"
+											referrerpolicy="no-referrer"
+										/>
+									) : (
+										<span class="gfl2-doll-fallback">{h.name ?? "?"}</span>
+									)}
+									{h.grade != null && h.grade !== "" && (
+										<span class="gfl2-grade" aria-hidden="true">
+											<svg viewBox="0 0 34 34"><text x="17" y="17" text-anchor="middle" dominant-baseline="central">{h.grade}</text></svg>
+										</span>
+									)}
+									<p class="gfl2-doll-lv">lv.{h.lv ?? "?"}</p>
 								</div>
 							))}
 						</div>
 					</section>
 				)}
 
-				{/* 玩法战绩 */}
-				{Object.keys(stages).length > 0 && (
+				{/* 战绩：周常歧路（横向滚动）+ 玩法战绩（网格） */}
+				{(weekStages.length > 0 || otherStages.length > 0) && (
 					<section class="gfl2-section">
-						<h4 class="gfl2-h4">{t("stagesTitle")}</h4>
-						<div class="gfl2-stages">
-							{STAGE_ORDER.filter((o) => stages[o.key]).map((o) => {
-								const v = stages[o.key] as StageItem | StageItem[];
-								const arr = Array.isArray(v) ? v : [v];
-								return (
-									<div class="gfl2-stage-row">
-										<div class="gfl2-stage-label">{o.label}</div>
-										<div class="gfl2-stage-cells">
-											{arr.map((it, i) => (
-												<div class="gfl2-stage-cell" key={`${o.key}-${i}`}>
-													<span class="gfl2-stage-name">{it.stage_name ?? it.name ?? "—"}</span>
-													<span class="gfl2-stage-val">{fmtPercent(it.complete_percent)}</span>
+						<h4 class="gfl2-h4">游戏战绩<span class="gfl2-h4-note">共 {weekStages.length + otherStages.length} 项</span></h4>
+
+						{weekStages.length > 0 && (
+							<div class="gfl2-stage-block">
+								<div class="gfl2-stage-group-label">周常歧路 · {weekStages.length}</div>
+								<div class="gfl2-stage-scroll">
+									{weekStages.map((s) => (
+										<div class="gfl2-stage-card" title={`${s.item.name || s.key}` + (stageCaption(s) ? ` · ${stageCaption(s)}` : "")}>
+											{s.item.show_pic && <img src={s.item.show_pic} alt="" loading="lazy" referrerpolicy="no-referrer" />}
+											<div class="gfl2-stage-cap">
+												<p class="gfl2-stage-name">{s.item.name || s.key}</p>
+												<div class="gfl2-stage-metric">
+													{codeChip(s) && <span class="gfl2-stage-chip">{codeChip(s)}</span>}
+													{stageCaption(s) && codeChip(s) !== stageCaption(s) && <span class="gfl2-stage-caption">{stageCaption(s)}</span>}
 												</div>
-											))}
+											</div>
 										</div>
-									</div>
-								);
-							})}
-						</div>
+									))}
+								</div>
+							</div>
+						)}
+
+						{otherStages.length > 0 && (
+							<div class="gfl2-stage-block">
+								<div class="gfl2-stage-group-label">玩法战绩 · {otherStages.length}</div>
+								<div class="gfl2-stage-list">
+									{otherStages.map((s) => (
+										<div class="gfl2-stage-card" title={`${s.item.name || s.key}` + (stageCaption(s) ? ` · ${stageCaption(s)}` : "")}>
+											{s.item.show_pic && <img src={s.item.show_pic} alt="" loading="lazy" referrerpolicy="no-referrer" />}
+											<div class="gfl2-stage-cap">
+												<p class="gfl2-stage-name">{s.item.name || s.key}</p>
+												<div class="gfl2-stage-metric">
+													{codeChip(s) && <span class="gfl2-stage-chip">{codeChip(s)}</span>}
+													{stageCaption(s) && codeChip(s) !== stageCaption(s) && <span class="gfl2-stage-caption">{stageCaption(s)}</span>}
+												</div>
+											</div>
+										</div>
+									))}
+								</div>
+							</div>
+						)}
 					</section>
 				)}
 
-				{/* 主题活动 */}
+				{/* 主题档案（折叠） */}
 				{themes.length > 0 && (
-					<section class="gfl2-section">
-						<h4 class="gfl2-h4">{t("themesTitle")}</h4>
-						<div class="gfl2-themes">
-							{themes.slice(0, 12).map((th: any) => (
-								<div class="gfl2-theme" title={`Case ${th.case_id ?? "?"}`}>
+					<details class="gfl2-theme-details">
+						<summary class="gfl2-theme-summary">主题档案 · {themes.length} 项（点击展开）</summary>
+						<div class="gfl2-theme-grid">
+							{themes.map((th) => (
+								<div class="gfl2-theme-item">
 									{th.show_pic && (
 										<img
 											src={th.show_pic}
 											alt={`Theme ${th.case_id ?? ""}`}
-											referrerpolicy="no-referrer"
 											loading="lazy"
+											referrerpolicy="no-referrer"
 										/>
 									)}
-									<span class="gfl2-theme-pct">{fmtPercent(th.complete_percent)}</span>
+									<span class="gfl2-theme-pct">{th.complete_percent ?? "?"}%</span>
 								</div>
 							))}
 						</div>
-					</section>
+					</details>
 				)}
 			</>
 		)}
@@ -223,55 +267,68 @@ function fmtTime(iso: string): string {
 
 <style>
 	.gfl2-card {
-		border: 1px solid var(--line-divider, var(--border));
+		border: 1px solid var(--line-divider);
+		/* 标题/数值用色：浅色随主题深色文字，暗色主题另行覆盖为亮色 */
+		--gfl2-heading: var(--deep-text);
+	}
+	/* 暗色下 --deep-text 仍是深色（主题变量未覆盖），标题/数值需转亮色（同主题 StepItem 惯例） */
+	:global(.dark) .gfl2-card {
+		--gfl2-heading: var(--btn-content);
 	}
 	.gfl2-head {
-		margin-bottom: 18px;
+		margin-bottom: 16px;
 		padding-bottom: 12px;
-		border-bottom: 1px solid var(--line-divider, var(--border));
+		border-bottom: 1px solid var(--line-divider);
 	}
 	.gfl2-title {
-		font-size: 1.1rem;
+		font-size: 1.05rem;
 		font-weight: 600;
-		color: var(--text, currentColor);
+		color: var(--gfl2-heading);
 		margin: 0;
 	}
 	.gfl2-sub {
 		font-size: 0.78rem;
-		color: var(--text-2, #888);
+		color: var(--content-meta);
 		margin: 4px 0 0;
 	}
 	.gfl2-empty {
-		color: var(--text-2, #888);
+		color: var(--content-meta);
 		font-size: 0.9rem;
 		padding: 24px 0;
 		text-align: center;
 	}
-
 	.gfl2-section {
-		margin-top: 22px;
+		margin-top: 20px;
 	}
 	.gfl2-h4 {
 		font-size: 0.95rem;
 		font-weight: 600;
-		color: var(--text, currentColor);
+		color: var(--gfl2-heading);
 		margin: 0 0 12px;
+		display: flex;
+		align-items: baseline;
+		gap: 8px;
+	}
+	.gfl2-h4-note {
+		font-weight: 400;
+		font-size: 0.75rem;
+		color: var(--content-meta);
 	}
 
-	/* 基础信息 */
-	.gfl2-userline {
+	/* 基础资料头 */
+	.gfl2-profile-head {
 		display: flex;
 		gap: 14px;
 		align-items: center;
-		margin-bottom: 14px;
+		margin: 8px 0 14px;
 	}
 	.gfl2-avatar {
-		width: 56px;
-		height: 56px;
+		width: 60px;
+		height: 60px;
 		border-radius: 50%;
 		object-fit: cover;
-		background: var(--card-bg, transparent);
-		border: 1px solid var(--line-divider, var(--border));
+		background: var(--card-bg);
+		border: 1px solid var(--line-divider);
 		flex-shrink: 0;
 	}
 	.gfl2-name {
@@ -283,161 +340,261 @@ function fmtTime(iso: string): string {
 	.gfl2-nick {
 		font-size: 1.05rem;
 		font-weight: 600;
-		color: var(--text, currentColor);
+		color: var(--gfl2-heading);
 	}
 	.gfl2-uid {
 		font-size: 0.78rem;
-		color: var(--text-2, #888);
+		color: var(--content-meta);
 		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	}
-	.gfl2-row {
+	.gfl2-subline {
 		display: flex;
-		gap: 8px;
+		gap: 12px;
 		flex-wrap: wrap;
 	}
-	.gfl2-tag {
-		font-size: 0.78rem;
-		color: var(--text-2, #888);
-		background: var(--card-bg, rgba(127, 127, 127, 0.08));
-		padding: 2px 8px;
-		border-radius: 4px;
-		border: 1px solid var(--line-divider, var(--border));
-	}
-	.gfl2-tag b {
-		color: var(--text, currentColor);
-		font-weight: 600;
-		margin-left: 4px;
+	.gfl2-muted {
+		font-size: 0.8rem;
+		color: var(--content-meta);
 	}
 
 	.gfl2-stats {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
 		gap: 8px;
+		margin-top: 6px;
 	}
 	.gfl2-stat {
-		background: var(--card-bg, rgba(127, 127, 127, 0.05));
-		border: 1px solid var(--line-divider, var(--border));
-		border-radius: var(--radius, 6px);
+		background: var(--card-bg);
+		border: 1px solid var(--line-divider);
+		border-radius: var(--radius-md);
 		padding: 10px 8px;
 		text-align: center;
 	}
 	.gfl2-stat-val {
 		display: block;
-		font-size: 1.05rem;
+		font-size: 0.98rem;
 		font-weight: 600;
-		color: var(--text, currentColor);
+		color: var(--gfl2-heading);
 	}
 	.gfl2-stat-label {
 		display: block;
 		font-size: 0.72rem;
-		color: var(--text-2, #888);
+		color: var(--content-meta);
 		margin-top: 3px;
 	}
 
-	/* 人形 */
-	.gfl2-heroes {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
-		gap: 8px;
-	}
-	.gfl2-hero {
-		background: var(--card-bg, rgba(127, 127, 127, 0.05));
-		border: 1px solid var(--line-divider, var(--border));
-		border-radius: var(--radius, 6px);
-		padding: 8px 6px;
-		text-align: center;
-		transition: transform 0.15s;
-	}
-	.gfl2-hero:hover {
-		transform: translateY(-2px);
-	}
-	.gfl2-hero-pic {
-		width: 48px;
-		height: 48px;
-		margin: 0 auto 6px;
-		background: var(--card-bg, rgba(127, 127, 127, 0.1));
-		border-radius: 50%;
-		overflow: hidden;
-	}
-	.gfl2-hero-pic img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-	.gfl2-hero-meta {
-		display: flex;
-		flex-direction: column;
-		gap: 1px;
-	}
-	.gfl2-hero-name {
-		font-size: 0.78rem;
-		font-weight: 600;
-		color: var(--text, currentColor);
-	}
-	.gfl2-hero-lv {
-		font-size: 0.7rem;
-		color: var(--text-2, #888);
-	}
-
-	/* 玩法战绩 */
-	.gfl2-stages {
-		display: flex;
-		flex-direction: column;
-		gap: 6px;
-	}
-	.gfl2-stage-row {
+	/* 人形：横向滚动立绘条 */
+	.gfl2-dolls {
 		display: flex;
 		gap: 10px;
-		align-items: flex-start;
-		padding: 8px 10px;
-		background: var(--card-bg, rgba(127, 127, 127, 0.04));
-		border-radius: var(--radius, 6px);
+		overflow-x: auto;
+		overflow-y: hidden;
+		padding: 4px 2px 12px;
+		scroll-snap-type: x proximity;
 	}
-	.gfl2-stage-label {
-		font-size: 0.82rem;
-		color: var(--text-2, #888);
-		min-width: 70px;
-		flex-shrink: 0;
-	}
-	.gfl2-stage-cells {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 8px 14px;
-	}
-	.gfl2-stage-cell {
-		display: flex;
-		gap: 6px;
-		align-items: baseline;
-	}
-	.gfl2-stage-name {
-		font-size: 0.78rem;
-		color: var(--text-2, #888);
-	}
-	.gfl2-stage-val {
-		font-size: 0.82rem;
-		font-weight: 600;
-		color: var(--text, currentColor);
-		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-	}
-
-	/* 主题活动 */
-	.gfl2-themes {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
-		gap: 6px;
-	}
-	.gfl2-theme {
+	.gfl2-doll {
 		position: relative;
-		aspect-ratio: 1 / 1;
-		border-radius: var(--radius, 6px);
+		flex: 0 0 auto;
+		width: 92px;
+		height: 138px;
+		border-radius: 10px;
+		background: var(--card-bg);
+		/* border: 1px solid var(--line-divider); */
+		scroll-snap-align: start;
 		overflow: hidden;
-		border: 1px solid var(--line-divider, var(--border));
-		background: var(--card-bg, rgba(127, 127, 127, 0.05));
 	}
-	.gfl2-theme img {
+	.gfl2-doll img {
+		position: absolute;
+		left: 0;
+		top: 0;
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
+		object-position: top center;
+		display: block;
+	}
+	.gfl2-doll-fallback {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 100%;
+		color: var(--content-meta);
+		font-size: 0.8rem;
+	}
+	.gfl2-doll-lv {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 1px;
+		margin: 0;
+		z-index: 2;
+		text-align: center;
+		font-size: 0.8rem;
+		font-weight: 600;
+		line-height: 1.3;
+		color: #f26c1c;
+		pointer-events: none;
+	}
+	/* 椎体徽章：官方 PNG 装饰圆底（public/gfl2-grade-badge.png，34×34）+ svg 叠数字；同 Admin.vue grade_text_svg 手法 */
+	.gfl2-grade {
+		position: absolute;
+		top: 5px;
+		right: 6px;
+		z-index: 2;
+		width: 22px;
+		height: 22px;
+		border-radius: 50%;
+		overflow: hidden;
+		background: url("/gfl2-grade-badge.png");
+		background-size: 100% 100%;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+	}
+	.gfl2-grade svg {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 100%;
+		height: 100%;
+	}
+	.gfl2-grade svg text {
+		fill: #fff;
+		font-family: Arial, Helvetica, sans-serif;
+		font-size: 20px;
+		font-weight: 700;
+	}
+
+	/* 战绩 */
+	.gfl2-stage-block + .gfl2-stage-block {
+		margin-top: 14px;
+	}
+	.gfl2-stage-group-label {
+		font-size: 0.78rem;
+		color: var(--content-meta);
+		margin: 0 0 8px;
+	}
+	.gfl2-stage-list {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+		gap: 10px;
+	}
+	.gfl2-stage-scroll {
+		display: flex;
+		overflow-x: auto;
+		overflow-y: hidden;
+		gap: 10px;
+		padding: 2px 2px 8px;
+		scroll-snap-type: x proximity;
+	}
+	.gfl2-stage-scroll .gfl2-stage-card {
+		flex: 0 0 auto;
+		width: min(420px, 84%);
+		scroll-snap-align: start;
+	}
+	.gfl2-stage-scroll .gfl2-stage-cap {
+		top: 50%;
+		bottom: auto;
+		transform: translateY(-50%);
+	}
+	.gfl2-stage-card {
+		position: relative;
+		width: 100%;
+		aspect-ratio: 3.64 / 1;
+		border-radius: 10px;
+		overflow: hidden;
+		background: var(--card-bg);
+		border: 1px solid var(--line-divider);
+	}
+	.gfl2-stage-card img {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+	}
+	.gfl2-stage-card::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(90deg, rgba(8, 8, 10, 0.3), rgba(8, 8, 10, 0.18) 60%, rgba(8, 8, 10, 0.32));
+		pointer-events: none;
+	}
+	.gfl2-stage-cap {
+		position: absolute;
+		right: 12px;
+		bottom: 10px;
+		z-index: 1;
+		max-width: 72%;
+		text-align: right;
+	}
+	.gfl2-stage-name {
+		margin: 0 0 3px;
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: #fff;
+		line-height: 1.25;
+		text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.gfl2-stage-metric {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 5px;
+		flex-wrap: wrap;
+		font-size: 0.75rem;
+		color: #ffe3a8;
+		line-height: 1.5;
+		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
+	}
+	.gfl2-stage-chip {
+		background: rgba(235, 235, 238, 0.92);
+		color: #1a1a1a;
+		border-radius: 4px;
+		padding: 0 5px;
+		line-height: 15px;
+		font-weight: 600;
+		text-shadow: none;
+	}
+	.gfl2-stage-caption {
+		text-align: right;
+	}
+
+	/* 主题档案 */
+	.gfl2-theme-details {
+		margin-top: 16px;
+	}
+	.gfl2-theme-summary {
+		cursor: pointer;
+		color: var(--content-meta);
+		font-size: 0.82rem;
+		user-select: none;
+	}
+	.gfl2-theme-summary:hover {
+		color: var(--primary);
+	}
+	.gfl2-theme-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+		gap: 8px;
+		margin-top: 8px;
+	}
+	.gfl2-theme-item {
+		position: relative;
+		border-radius: 8px;
+		overflow: hidden;
+		border: 1px solid var(--line-divider);
+		background: var(--card-bg);
+	}
+	.gfl2-theme-item img {
+		width: 100%;
+		height: 100%;
+		aspect-ratio: 1;
+		object-fit: cover;
+		display: block;
 	}
 	.gfl2-theme-pct {
 		position: absolute;

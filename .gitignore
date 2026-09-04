@@ -12,6 +12,9 @@ public/vndb-covers/
 # 启用 GFL2 后本地/CI 自己跑 `pnpm fetch:gfl2` 即可（也已在 pnpm build 前置）。
 src/constants/gfl2-community.json
 
+# vite/esbuild 构建残留临时目录（safe-delete 拦截时常滞留，强制忽略）
+_tmp_*/
+
 # dependencies
 node_modules/
 
