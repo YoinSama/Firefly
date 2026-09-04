@@ -117,7 +117,12 @@ function stageTitle(s: { key: string; item: StageItem }): string {
 
 function fmtTime(iso: string): string {
 	try {
-		return new Date(iso).toLocaleString("zh-CN", { hour12: false });
+		// 显式指定北京时间：博客为静态构建，构建机时区（CF Pages=UTC）会污染
+		// toLocaleString 的本地时区默认值，不指定 timeZone 会显示成 UTC。
+		return new Date(iso).toLocaleString("zh-CN", {
+			hour12: false,
+			timeZone: "Asia/Shanghai",
+		});
 	} catch {
 		return iso;
 	}
