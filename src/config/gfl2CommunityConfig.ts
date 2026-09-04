@@ -12,7 +12,7 @@ import type { Gfl2CommunityConfig } from "../types/gfl2CommunityConfig";
  * fetch 失败（源站挂 / 网络不通）只会输出空结构 + warn，**不会阻塞构建**，博客仍能发布。
  */
 export const gfl2CommunityConfig: Gfl2CommunityConfig = {
-	enable: false,
+	enable: true,
 	showOnAbout: true,
 
 	api: {
