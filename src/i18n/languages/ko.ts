@@ -482,6 +482,13 @@ export const ko: Translation = {
 	[Key.codeCollapsibleExpanded]: "코드 블록 펼쳐짐",
 	[Key.codeCollapsibleCollapsed]: "코드 블록 접힘",
 
+	// 콜아웃(Callout / Admonition) 제목
+	[Key.calloutNote]: "참고",
+	[Key.calloutTip]: "팁",
+	[Key.calloutImportant]: "중요",
+	[Key.calloutWarning]: "경고",
+	[Key.calloutCaution]: "주의",
+
 	// Gallery Page
 	[Key.gallery]: "갤러리",
 	[Key.galleryDescription]: "삶의 아름다운 순간을 담다",

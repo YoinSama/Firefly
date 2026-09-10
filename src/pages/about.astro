@@ -2,7 +2,6 @@
 
 import { getEntry, render } from "astro:content";
 import Markdown from "@components/common/Markdown.astro";
-import GFLProfile from "@components/pages/gfl/GFLProfile.astro";
 import { profileConfig } from "@/config/profileConfig";
 import { siteConfig } from "@/config/siteConfig";
 import I18nKey from "@/i18n/i18nKey";
@@ -37,5 +36,12 @@ const jsonLd = buildProfilePage({
             </Markdown>
         </div>
     </div>
-    <GFLProfile />
+    {/*
+      少前游戏资料卡原本是页面底部的 <GFLProfile /> 组件，现已移除。
+      改为在正文 Markdown（src/content/spec/about.md）里用 ::gfl2{} 指令内嵌，
+      这样一张卡在文章和 about 页通用，样式统一由
+      src/styles/markdown-extend.styl 的 .gfl2-embed 段维护。
+      注意：随之失效的有「手动刷新」按钮、24h 自动保鲜和 CF Deploy Hook
+      （PUBLIC_GFL2_REFRESH_HOOK 已无消费方），数据仍在每次构建时自动拉取。
+    */}
 </MainGridLayout>

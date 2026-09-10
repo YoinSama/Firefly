@@ -477,6 +477,13 @@ export const zh_TW: Translation = {
 	[Key.codeCollapsibleExpanded]: "代碼區塊已展開",
 	[Key.codeCollapsibleCollapsed]: "代碼區塊已折疊",
 
+	// 提醒框（Callout / Admonition）標題
+	[Key.calloutNote]: "說明",
+	[Key.calloutTip]: "提示",
+	[Key.calloutImportant]: "重要",
+	[Key.calloutWarning]: "警告",
+	[Key.calloutCaution]: "注意",
+
 	// 相簿頁面
 	[Key.gallery]: "相簿",
 	[Key.galleryDescription]: "記錄生活中的美好瞬間",

@@ -475,6 +475,13 @@ export const zh_CN: Translation = {
 	[Key.codeCollapsibleExpanded]: "代码块已展开",
 	[Key.codeCollapsibleCollapsed]: "代码块已折叠",
 
+	// 提醒框（Callout / Admonition）标题
+	[Key.calloutNote]: "说明",
+	[Key.calloutTip]: "提示",
+	[Key.calloutImportant]: "重要",
+	[Key.calloutWarning]: "警告",
+	[Key.calloutCaution]: "注意",
+
 	// 相册页面
 	[Key.gallery]: "相册",
 	[Key.galleryDescription]: "记录生活中的美好瞬间",

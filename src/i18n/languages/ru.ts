@@ -486,6 +486,13 @@ export const ru: Translation = {
 	[Key.codeCollapsibleExpanded]: "Блок кода развернут",
 	[Key.codeCollapsibleCollapsed]: "Блок кода свернут",
 
+	// Заголовки выносок (Callout / Admonition)
+	[Key.calloutNote]: "Примечание",
+	[Key.calloutTip]: "Совет",
+	[Key.calloutImportant]: "Важно",
+	[Key.calloutWarning]: "Предупреждение",
+	[Key.calloutCaution]: "Осторожно",
+
 	// Страница галереи
 	[Key.gallery]: "Галерея",
 	[Key.galleryDescription]: "Запечатлеть прекрасные моменты жизни",

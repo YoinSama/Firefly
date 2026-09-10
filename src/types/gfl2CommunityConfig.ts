@@ -24,6 +24,34 @@ export interface Gfl2CommunityConfig {
 		heroCount?: number;
 	};
 
+	/**
+	 * 次级模块（人形图鉴 / 战绩档案 / 主题档案）显示开关。
+	 * 全部可选，默认开启：判断一律用 `!== false`，将来不写这个字段也不会误关。
+	 */
+	modules?: {
+		/** 人形图鉴，默认展示 */
+		heroes?: boolean;
+		/** 战绩档案，默认展示 */
+		stages?: boolean;
+		/** 主题档案，默认展示 */
+		themes?: boolean;
+	};
+
+	/**
+	 * 点击卡片跳转（官方社区资料页）。
+	 * URL 只在这里配一份，组件统一读取，不在任何组件里硬编码。
+	 */
+	link?: {
+		/** 是否启用跳转，默认 true；url 为空时自动不生效 */
+		enable?: boolean;
+		/** 跳转地址，例如 https://gf2-bbs.exiliumgf.com/m/otherData?id=18736 */
+		url?: string;
+		/** 跳转文案（同时作为链接的 title 提示；正式环境「数据来源」行也复用它） */
+		text?: string;
+		/** 新窗口打开，默认 true → target="_blank" + rel="noopener noreferrer" */
+		external?: boolean;
+	};
+
 	/** 文案（不配置则用组件内置默认） */
 	i18n?: Partial<Gfl2CommunityI18n>;
 }
@@ -42,6 +70,8 @@ export interface Gfl2CommunityI18n {
 	stagesTitle: string;
 	themesTitle: string;
 	lastUpdated: string;
+	/** 正式环境底部展示的「数据来源」文案（link.text 未配置时的回退） */
+	sourceFrom: string;
 	notConfigured: string;
 	fetchFailed: string;
 }

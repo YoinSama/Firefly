@@ -24,6 +24,30 @@ export const gfl2CommunityConfig: Gfl2CommunityConfig = {
 		heroCount: 8,
 	},
 
+	/**
+	 * 次级模块显示开关（默认全开；改成 false 即不渲染该分区）。
+	 * 注意：这里只认本地配置，不接官方接口 user_info 里的
+	 * show_hero / show_stage / show_theme（那是玩家在官方社区设的隐私开关），
+	 * 避免「我明明开了却不显示」的困惑。
+	 */
+	modules: {
+		heroes: true,
+		stages: true,
+		themes: true,
+	},
+
+	/**
+	 * 点击卡片跳转到官方社区资料页。
+	 * 原分享链接里那串 back_url 是「站内返回历史」（/threadInfo?id=133233 →
+	 * /search?search_word=余音Yoin），只影响在官方站内点返回的落点，直达用不上，已去掉。
+	 */
+	link: {
+		enable: true,
+		url: "https://gf2-bbs.exiliumgf.com/m/otherData?id=18736",
+		text: "数据来源于《少女前线2：追放》官方社区",
+		external: true,
+	},
+
 	i18n: {
 		nickname: "游戏昵称",
 		level: "指挥官等级",
@@ -38,6 +62,8 @@ export const gfl2CommunityConfig: Gfl2CommunityConfig = {
 		stagesTitle: "玩法战绩",
 		themesTitle: "主题活动",
 		lastUpdated: "数据更新于",
+		// 卡片底部「数据来源」文案；未配置时回退到上面的 link.text，两者留一个即可
+		sourceFrom: "数据来源于《少女前线2：追放》官方社区",
 		notConfigured: "GFL2 社区资料未启用",
 		fetchFailed: "暂无法获取游戏数据（源站可能不可达或 API Key 无效）",
 	},

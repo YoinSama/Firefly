@@ -485,6 +485,13 @@ export const en: Translation = {
 	[Key.codeCollapsibleExpanded]: "Code block expanded",
 	[Key.codeCollapsibleCollapsed]: "Code block collapsed",
 
+	// Callout / Admonition titles
+	[Key.calloutNote]: "Note",
+	[Key.calloutTip]: "Tip",
+	[Key.calloutImportant]: "Important",
+	[Key.calloutWarning]: "Warning",
+	[Key.calloutCaution]: "Caution",
+
 	// Gallery Page
 	[Key.gallery]: "Gallery",
 	[Key.galleryDescription]: "Capturing beautiful moments in life",

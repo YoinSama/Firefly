@@ -483,6 +483,13 @@ export const ja: Translation = {
 	[Key.codeCollapsibleExpanded]: "コードブロックが展開されました",
 	[Key.codeCollapsibleCollapsed]: "コードブロックが折りたたまれました",
 
+	// コールアウト（Callout / Admonition）タイトル
+	[Key.calloutNote]: "補足",
+	[Key.calloutTip]: "ヒント",
+	[Key.calloutImportant]: "重要",
+	[Key.calloutWarning]: "警告",
+	[Key.calloutCaution]: "注意",
+
 	// ギャラリーページ
 	[Key.gallery]: "ギャラリー",
 	[Key.galleryDescription]: "人生の美しい瞬間を記録する",

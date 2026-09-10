@@ -40,6 +40,8 @@ import I18nKey from "./src/i18n/i18nKey";
 import { i18n } from "./src/i18n/translation";
 import fetchGfl2Community from "./src/integrations/fetch-gfl2-community";
 import { GithubCardComponent } from "./src/plugins/rehype-component-github-card.mjs";
+// 文章内嵌 GFL2 游戏资料卡：::gfl2{}（注册名 "gfl2" 对应指令名，见下方 rehypeComponents）
+import { Gfl2CardComponent } from "./src/plugins/rehype-component-gfl2-card.mjs";
 import { rehypeDiagramPanZoom } from "./src/plugins/rehype-diagram-panzoom.mjs";
 import rehypeEmailProtection from "./src/plugins/rehype-email-protection.mjs";
 import rehypeExternalLinks from "./src/plugins/rehype-external-links.mjs";
@@ -305,7 +307,20 @@ export default defineConfig({
 			],
 			rehypePlugins: [
 				[rehypeKatex, { katex }],
-				[rehypeCallouts, { theme: siteConfig.post.rehypeCallouts.theme }],
+				// 提醒框标题走 i18n（只给 title，主题自带的 indicator 图标会被浅合并保留）
+				[
+					rehypeCallouts,
+					{
+						theme: siteConfig.post.rehypeCallouts.theme,
+						callouts: {
+							note: { title: i18n(I18nKey.calloutNote) },
+							tip: { title: i18n(I18nKey.calloutTip) },
+							important: { title: i18n(I18nKey.calloutImportant) },
+							warning: { title: i18n(I18nKey.calloutWarning) },
+							caution: { title: i18n(I18nKey.calloutCaution) },
+						},
+					},
+				],
 				rehypeSlug,
 				rehypeCodeGroup,
 				[rehypeMermaid, mermaidConfig],
@@ -323,6 +338,8 @@ export default defineConfig({
 					{
 						components: {
 							github: GithubCardComponent,
+							// 文章内嵌 GFL2 游戏资料卡：::gfl2{} / ::gfl2{heroes="4" stages="true" themes="true"}
+							gfl2: Gfl2CardComponent,
 						},
 					},
 				],

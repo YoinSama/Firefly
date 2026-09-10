@@ -469,6 +469,13 @@ enum I18nKey {
 	codeCollapsibleExpanded = "codeCollapsibleExpanded",
 	codeCollapsibleCollapsed = "codeCollapsibleCollapsed",
 
+	// 提醒框（Callout / Admonition）标题
+	calloutNote = "calloutNote",
+	calloutTip = "calloutTip",
+	calloutImportant = "calloutImportant",
+	calloutWarning = "calloutWarning",
+	calloutCaution = "calloutCaution",
+
 	// 相册页面
 	gallery = "gallery",
 	galleryDescription = "galleryDescription",
