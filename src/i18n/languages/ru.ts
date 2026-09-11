@@ -540,6 +540,9 @@ export const ru: Translation = {
 	[Key.videoPrev]: "Предыдущее видео",
 	[Key.videoNext]: "Следующее видео",
 	[Key.videoLoadError]: "Не удалось загрузить видео",
+	[Key.videoVolume]: "Громкость фонового видео",
+	[Key.videoMute]: "Выключить звук",
+	[Key.videoUnmute]: "Включить звук",
 
 	// Чтение без отвлечений
 	[Key.immersiveReading]: "Чтение без отвлечений",

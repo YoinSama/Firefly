@@ -536,6 +536,9 @@ export const ja: Translation = {
 	[Key.videoPrev]: "前の動画",
 	[Key.videoNext]: "次の動画",
 	[Key.videoLoadError]: "動画の読み込みに失敗しました",
+	[Key.videoVolume]: "背景動画の音量",
+	[Key.videoMute]: "ミュート",
+	[Key.videoUnmute]: "ミュート解除",
 
 	// 没入型リーディング
 	[Key.immersiveReading]: "没入型リーディング",

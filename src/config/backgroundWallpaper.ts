@@ -68,6 +68,9 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 		dimOpacity: 0.2,
 		// 多视频播放模式："order" 顺序循环，"random" 随机切换（仅当 playerUrl 为数组时生效）
 		playerMode: "random",
+		// 背景视频默认音量，0-1之间（0 静音，1 最大）
+		// 仅作为首次访问的默认值，用户拖动导航栏音量滑块后以 localStorage 中记忆的值为准
+		playerVolume: 0.1,
 		// 主页横幅文字
 		homeText: {
 			// 是否启用主页横幅文字

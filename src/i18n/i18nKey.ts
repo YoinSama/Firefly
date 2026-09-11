@@ -520,6 +520,9 @@ enum I18nKey {
 	videoPrev = "videoPrev",
 	videoNext = "videoNext",
 	videoLoadError = "videoLoadError",
+	videoVolume = "videoVolume",
+	videoMute = "videoMute",
+	videoUnmute = "videoUnmute",
 
 	// 沉浸阅读 (immersive reading)
 	immersiveReading = "immersiveReading",

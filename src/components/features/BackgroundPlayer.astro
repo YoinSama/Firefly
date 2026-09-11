@@ -6,9 +6,13 @@ import { i18n } from "@/i18n/translation";
 export interface Props {
 	playerUrl: string | string[];
 	playerMode?: "order" | "random";
+	playerVolume?: number;
 }
 
-const { playerUrl, playerMode = "order" } = Astro.props;
+const { playerUrl, playerMode = "order", playerVolume = 0.1 } = Astro.props;
+
+// 默认音量，0-1 之间；越界值在运行时会被夹紧
+const defaultVolume = Math.min(1, Math.max(0, Number(playerVolume) || 0));
 
 const urls = Array.isArray(playerUrl) ? playerUrl : [playerUrl];
 const hasMultiple = urls.length > 1;
@@ -63,7 +67,7 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 	)
 }
 
-<script is:inline define:vars={{ urls: urlsJson, playerMode, hasMultiple }}>
+<script is:inline define:vars={{ urls: urlsJson, playerMode, hasMultiple, defaultVolume }}>
 	(() => {
 		var urlList = JSON.parse(urls);
 		if (!urlList.length) return;
@@ -80,6 +84,40 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 		// 防止 is:inline 脚本重复注册监听器（Swup 导航会重新执行脚本）
 		if (video.getAttribute("data-player-init")) return;
 		video.setAttribute("data-player-init", "true");
+
+		// 音量状态：优先读 localStorage，没有则用 config 里的 playerVolume
+		var VOLUME_KEY = "bgPlayerVolume";
+		var MUTED_KEY = "bgPlayerMuted";
+		function clampVolume(v) {
+			v = Number(v);
+			if (isNaN(v)) return defaultVolume;
+			return Math.min(1, Math.max(0, v));
+		}
+		function readVolume() {
+			try {
+				var s = localStorage.getItem(VOLUME_KEY);
+				if (s !== null && s !== "") return clampVolume(s);
+			} catch (e) {}
+			return defaultVolume;
+		}
+		function readMuted() {
+			try {
+				return localStorage.getItem(MUTED_KEY) === "1";
+			} catch (e) {}
+			return false;
+		}
+		var volume = readVolume();
+		var muted = readMuted();
+
+		function applyVolume() {
+			video.volume = muted ? 0 : volume;
+			// 静音状态靠 muted 属性保持（自动播放策略下也有效），非静音时解除 play 前设置的临时静音
+			video.muted = !!muted;
+		}
+
+		function notifyVolumeState() {
+			window.dispatchEvent(new CustomEvent("bg-player-volume-state", { detail: { volume: volume, muted: muted } }));
+		}
 
 		var isPlaying = false;
 		var currentIndex = 0;
@@ -121,9 +159,11 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 
 		function doPlay() {
 			video.src = urlList[currentIndex];
+			video.volume = muted ? 0 : volume;
+			// 自动播放策略：先静音起播，play 成功后再按用户设置恢复音量
 			video.muted = true;
 			video.play()
-				.then(function () { setTimeout(function () { if (video) video.muted = false; }, 100); })
+				.then(function () { setTimeout(function () { if (video && isPlaying) applyVolume(); }, 100); })
 				.catch(function () { isPlaying = false; syncAttr(); });
 		}
 
@@ -179,8 +219,15 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 			}
 		}
 
-		// 监听导航栏播放按钮事件
-		window.addEventListener("bg-player-toggle", toggle);
+	// 监听导航栏播放按钮事件
+	window.addEventListener("bg-player-toggle", toggle);
+	// 监听导航栏音量面板的设置（拖动滑块 / 切换静音）
+	window.addEventListener("bg-player-volume-set", function (e) {
+		var d = (e && e.detail) || {};
+		if (typeof d.volume === "number") volume = clampVolume(d.volume);
+		if (typeof d.muted === "boolean") muted = d.muted;
+		applyVolume();
+	});
 		video.addEventListener("ended", onEnded);
 		video.addEventListener("error", onError);
 		// 播放成功时重置错误计数
@@ -203,6 +250,10 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 			if (prevBtn) prevBtn.style.display = "none";
 			if (nextBtn) nextBtn.style.display = "none";
 		}
+
+		// 应用已保存的音量设置，并把当前状态广播给导航栏音量面板
+		applyVolume();
+		notifyVolumeState();
 
 		function cleanup() {
 			// 视频仍在播放时保留属性，供 Navbar 同步按钮状态

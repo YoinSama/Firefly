@@ -536,6 +536,9 @@ export const ko: Translation = {
 	[Key.videoPrev]: "이전 영상",
 	[Key.videoNext]: "다음 영상",
 	[Key.videoLoadError]: "영상을 불러오지 못했습니다",
+	[Key.videoVolume]: "배경 영상 볼륨",
+	[Key.videoMute]: "음소거",
+	[Key.videoUnmute]: "음소거 해제",
 
 	// 몰입형 읽기
 	[Key.immersiveReading]: "몰입형 읽기",

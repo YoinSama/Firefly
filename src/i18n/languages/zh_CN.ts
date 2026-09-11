@@ -526,6 +526,9 @@ export const zh_CN: Translation = {
 	[Key.videoPrev]: "上一个视频",
 	[Key.videoNext]: "下一个视频",
 	[Key.videoLoadError]: "视频加载失败",
+	[Key.videoVolume]: "背景视频音量",
+	[Key.videoMute]: "静音",
+	[Key.videoUnmute]: "取消静音",
 
 	// 沉浸阅读
 	[Key.immersiveReading]: "沉浸阅读",

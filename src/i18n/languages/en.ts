@@ -539,6 +539,9 @@ export const en: Translation = {
 	[Key.videoPrev]: "Previous video",
 	[Key.videoNext]: "Next video",
 	[Key.videoLoadError]: "Video failed to load",
+	[Key.videoVolume]: "Background video volume",
+	[Key.videoMute]: "Mute",
+	[Key.videoUnmute]: "Unmute",
 
 	// Immersive Reading
 	[Key.immersiveReading]: "Immersive Reading",

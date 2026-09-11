@@ -528,6 +528,9 @@ export const zh_TW: Translation = {
 	[Key.videoPrev]: "上一個影片",
 	[Key.videoNext]: "下一個影片",
 	[Key.videoLoadError]: "影片載入失敗",
+	[Key.videoVolume]: "背景影片音量",
+	[Key.videoMute]: "靜音",
+	[Key.videoUnmute]: "取消靜音",
 
 	// 沉浸閱讀
 	[Key.immersiveReading]: "沉浸閱讀",
