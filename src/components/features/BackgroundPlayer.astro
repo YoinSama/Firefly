@@ -7,12 +7,28 @@ export interface Props {
 	playerUrl: string | string[];
 	playerMode?: "order" | "random";
 	playerVolume?: number;
+	playerAutoPlay?: boolean | { desktop?: boolean; mobile?: boolean };
 }
 
-const { playerUrl, playerMode = "order", playerVolume = 0.1 } = Astro.props;
+const {
+	playerUrl,
+	playerMode = "order",
+	playerVolume = 0.1,
+	playerAutoPlay = false,
+} = Astro.props;
 
 // 默认音量，0-1 之间；越界值在运行时会被夹紧
 const defaultVolume = Math.min(1, Math.max(0, Number(playerVolume) || 0));
+
+// 自动播放：支持布尔值，或分别设置桌面端/移动端
+const autoPlayDesktop =
+	typeof playerAutoPlay === "boolean"
+		? playerAutoPlay
+		: (playerAutoPlay?.desktop ?? false);
+const autoPlayMobile =
+	typeof playerAutoPlay === "boolean"
+		? playerAutoPlay
+		: (playerAutoPlay?.mobile ?? false);
 
 const urls = Array.isArray(playerUrl) ? playerUrl : [playerUrl];
 const hasMultiple = urls.length > 1;
@@ -67,7 +83,7 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 	)
 }
 
-<script is:inline define:vars={{ urls: urlsJson, playerMode, hasMultiple, defaultVolume }}>
+<script is:inline define:vars={{ urls: urlsJson, playerMode, hasMultiple, defaultVolume, autoPlayDesktop, autoPlayMobile }}>
 	(() => {
 		var urlList = JSON.parse(urls);
 		if (!urlList.length) return;
@@ -88,12 +104,26 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 		// 音量状态：优先读 localStorage，没有则用 config 里的 playerVolume
 		var VOLUME_KEY = "bgPlayerVolume";
 		var MUTED_KEY = "bgPlayerMuted";
+		var DEFAULT_KEY = "bgPlayerVolumeDefault";
 		function clampVolume(v) {
 			v = Number(v);
 			if (isNaN(v)) return defaultVolume;
 			return Math.min(1, Math.max(0, v));
 		}
+		// 站长把 config 里的默认音量改了（如 0.1 -> 0.01）时，让访客跟随新默认值；
+		// 访客自己拖过滑块的情况下也一并跟随，保证配置是唯一真相
+		function syncDefaultVolume() {
+			try {
+				var storedDefault = localStorage.getItem(DEFAULT_KEY);
+				if (storedDefault !== null && Math.abs(Number(storedDefault) - defaultVolume) > 1e-6) {
+					localStorage.setItem(VOLUME_KEY, String(defaultVolume));
+					localStorage.setItem(MUTED_KEY, "0");
+				}
+				localStorage.setItem(DEFAULT_KEY, String(defaultVolume));
+			} catch (e) {}
+		}
 		function readVolume() {
+			syncDefaultVolume();
 			try {
 				var s = localStorage.getItem(VOLUME_KEY);
 				if (s !== null && s !== "") return clampVolume(s);
@@ -108,18 +138,26 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 		}
 		var volume = readVolume();
 		var muted = readMuted();
+		// 因浏览器自动播放策略临时静音（区别于用户主动静音），首次用户交互后自动解除
+		var autoMuted = false;
+
+		function effectiveMuted() {
+			return muted || autoMuted;
+		}
 
 		function applyVolume() {
 			video.volume = muted ? 0 : volume;
 			// 静音状态靠 muted 属性保持（自动播放策略下也有效），非静音时解除 play 前设置的临时静音
-			video.muted = !!muted;
+			video.muted = effectiveMuted();
 		}
 
 		function notifyVolumeState() {
-			window.dispatchEvent(new CustomEvent("bg-player-volume-state", { detail: { volume: volume, muted: muted } }));
+			window.dispatchEvent(new CustomEvent("bg-player-volume-state", { detail: { volume: volume, muted: effectiveMuted() } }));
 		}
 
 		var isPlaying = false;
+		// 当前这次播放是否由"打开页面自动播放"发起（用户还没主动操控播放）
+		var autoPlayActive = false;
 		var currentIndex = 0;
 		var errorCount = 0;
 		var toastTimer = null;
@@ -154,22 +192,102 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 		function syncAttr() {
 			document.body.toggleAttribute("data-bg-video-playing", isPlaying);
 			document.documentElement.toggleAttribute("data-bg-video-playing", isPlaying);
+			// 自动播放（用户还没主动操控播放）时，视频只顶替静态壁纸图片，
+			// 保留 homeText 文字层与遮罩，避免刚进首页标题就消失
+			var keepOverlay = isPlaying && autoPlayActive;
+			document.body.toggleAttribute("data-bg-video-autoplay", keepOverlay);
+			document.documentElement.toggleAttribute("data-bg-video-autoplay", keepOverlay);
 			window.dispatchEvent(new CustomEvent("bg-player-state-change", { detail: { playing: isPlaying } }));
 		}
 
-		function doPlay() {
+		function stopPlayback() {
+			isPlaying = false;
+			if (overlay) { overlay.classList.remove("opacity-100"); overlay.classList.add("opacity-0"); }
+			syncAttr();
+		}
+
+		function doPlay(opts) {
+			// opts.gestureUnlock：静音起播 + 挂"首次用户交互后开声"的解锁（自动播放场景）
+			// 其他场景（用户点了播放按钮，已有交互）：静音起播，play 成功 100ms 后按用户设置恢复声音
+			var gestureUnlock = !!(opts && opts.gestureUnlock);
 			video.src = urlList[currentIndex];
 			video.volume = muted ? 0 : volume;
-			// 自动播放策略：先静音起播，play 成功后再按用户设置恢复音量
 			video.muted = true;
-			video.play()
-				.then(function () { setTimeout(function () { if (video && isPlaying) applyVolume(); }, 100); })
-				.catch(function () { isPlaying = false; syncAttr(); });
+			var p = video.play();
+			if (p && p.then) {
+				p.then(function () {
+					if (gestureUnlock) {
+						autoMuted = true;
+						notifyVolumeState();
+						armGestureUnlock();
+					} else {
+						setTimeout(function () { if (video && isPlaying) applyVolume(); }, 100);
+					}
+				}).catch(function () {
+					// 连静音起播都被拒绝（极少数环境）：按用户设置再试一次，仍失败则退回静态壁纸
+					video.muted = effectiveMuted();
+					var p2 = video.play();
+					if (p2 && p2.catch) p2.catch(stopPlayback);
+				});
+			}
+		}
+
+		// 自动播放场景：静音起播后，等用户第一次交互（点击/按键/触摸/滚动）再开声
+		var UNLOCK_EVENTS = ["pointerdown", "keydown", "touchstart", "wheel"];
+		var unlockHandler = null;
+		function armGestureUnlock() {
+			if (unlockHandler || muted) return; // 用户本来就要静音，无需解锁
+			unlockHandler = function () {
+				for (var i = 0; i < UNLOCK_EVENTS.length; i++) window.removeEventListener(UNLOCK_EVENTS[i], unlockHandler);
+				unlockHandler = null;
+				autoMuted = false;
+				if (isPlaying) applyVolume();
+				notifyVolumeState();
+			};
+			for (var i = 0; i < UNLOCK_EVENTS.length; i++) {
+				window.addEventListener(UNLOCK_EVENTS[i], unlockHandler, { passive: true });
+			}
+		}
+
+		function shouldAutoPlay() {
+			// 纯色背景模式下没有视频层，不自动播放
+			if (document.documentElement.getAttribute("data-wallpaper-mode") === "none") return false;
+			var isDesktop = true;
+			if (window.matchMedia) isDesktop = window.matchMedia("(min-width: 768px)").matches;
+			return isDesktop ? autoPlayDesktop : autoPlayMobile;
+		}
+
+		function tryAutoPlay() {
+			if (isPlaying || !shouldAutoPlay()) return;
+			currentIndex = playerMode === "random" ? pickIndex(-1) : 0;
+			var started = false;
+			var onPlaying = function () {
+				if (started) return;
+				started = true;
+				video.removeEventListener("playing", onPlaying);
+				// 首帧就绪后再切到视频层，避免壁纸图片先消失导致闪白
+				isPlaying = true;
+				autoPlayActive = true;
+				if (overlay) { overlay.classList.remove("opacity-0"); overlay.classList.add("opacity-100"); }
+				syncAttr();
+			};
+			video.addEventListener("playing", onPlaying);
+			// 兜底：8 秒还没播起来就放弃，保持静态壁纸
+			setTimeout(function () {
+				if (started) return;
+				started = true;
+				video.removeEventListener("playing", onPlaying);
+				try { video.pause(); } catch (e) {}
+				stopPlayback();
+			}, 8000);
+			doPlay({ gestureUnlock: true });
 		}
 
 		function switchTrack(index) {
 			if (index < 0 || index >= urlList.length) return;
 			currentIndex = index;
+			// 用户主动切轨，退出"自动播放"的宽容模式
+			autoPlayActive = false;
 			if (isPlaying) {
 				doPlay();
 			} else {
@@ -179,6 +297,8 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 		}
 
 		function toggle() {
+			// 用户主动点播放/暂停，退出"自动播放"的宽容模式（此时进入完整沉浸播放）
+			autoPlayActive = false;
 			isPlaying = !isPlaying;
 			if (isPlaying) {
 				if (currentIndex >= urlList.length) currentIndex = 0;
@@ -226,6 +346,8 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 		var d = (e && e.detail) || {};
 		if (typeof d.volume === "number") volume = clampVolume(d.volume);
 		if (typeof d.muted === "boolean") muted = d.muted;
+		// 用户主动调节过音量/静音，视为已有交互意图，解除自动播放的临时静音
+		autoMuted = false;
 		applyVolume();
 	});
 		video.addEventListener("ended", onEnded);
@@ -255,6 +377,16 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 		applyVolume();
 		notifyVolumeState();
 
+		// 打开页面自动播放：等首屏渲染完再启动，避免和壁纸初始化抢资源
+		if (shouldAutoPlay()) {
+			var startAutoPlay = function () { setTimeout(tryAutoPlay, 200); };
+			if (document.readyState === "loading") {
+				document.addEventListener("DOMContentLoaded", startAutoPlay);
+			} else {
+				startAutoPlay();
+			}
+		}
+
 		function cleanup() {
 			// 视频仍在播放时保留属性，供 Navbar 同步按钮状态
 			if (!isPlaying) {
@@ -267,11 +399,18 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 </script>
 
 <style>
-	:global([data-bg-video-playing] #banner-images-container),
-	:global([data-bg-video-playing] #banner-dim-container),
-	:global([data-bg-video-playing] #banner-overlay-container),
-	:global([data-bg-video-playing] #header-waves),
-	:global([data-bg-video-playing] #wallpaper-gradient) {
+	/* 用户主动播放：静态壁纸各层整体让位给视频（沉浸模式） */
+	:global([data-bg-video-playing]:not([data-bg-video-autoplay]) #banner-images-container),
+	:global([data-bg-video-playing]:not([data-bg-video-autoplay]) #banner-dim-container),
+	:global([data-bg-video-playing]:not([data-bg-video-autoplay]) #banner-overlay-container),
+	:global([data-bg-video-playing]:not([data-bg-video-autoplay]) #header-waves),
+	:global([data-bg-video-playing]:not([data-bg-video-autoplay]) #wallpaper-gradient) {
+		opacity: 0 !important;
+		transition: opacity 0.5s ease;
+	}
+
+	/* 打开页面自动播放：只让静态壁纸图片让位，保留遮罩、首页文字与底部渐变 */
+	:global([data-bg-video-autoplay] #banner-images-container) {
 		opacity: 0 !important;
 		transition: opacity 0.5s ease;
 	}

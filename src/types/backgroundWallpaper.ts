@@ -16,6 +16,10 @@ export type BackgroundWallpaperConfig = {
 		dimOpacity?: number; // 横幅文字遮罩暗度，0-1之间，值越大越暗，默认0.15
 		playerMode?: "order" | "random"; // 多视频播放模式："order" 顺序循环（默认），"random" 随机切换
 		playerVolume?: number; // 背景视频默认音量，0-1之间（0 静音，1 最大），默认0.1；用户手动调整后以 localStorage 中的值为准
+		playerAutoPlay?: boolean | {
+			desktop?: boolean; // 桌面端打开页面时是否自动播放背景视频
+			mobile?: boolean; // 移动端打开页面时是否自动播放背景视频（默认关闭，省流量）
+		}; // 打开页面时自动播放背景视频。受浏览器自动播放策略限制：无用户交互时只能静音起播，首次交互（点击/滚动/按键）后自动恢复声音
 		homeText?: {
 			enable: boolean; // 是否在首页显示自定义文字（全局开关）
 			title?: string; // 主标题

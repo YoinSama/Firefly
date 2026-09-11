@@ -262,34 +262,38 @@ const logoVariants = await Promise.all(
             </div>
         )}
         {bgPlayerEnabled && (
-            <div id="bg-volume-panel" class="float-panel float-panel-closed absolute transition-all right-16 p-4 w-64 z-50" data-floating-panel data-floating-panel-trigger="bg-volume-switch" inert aria-hidden="true">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-sm font-medium text-(--btn-content)">{i18n(I18nKey.videoVolume)}</span>
-                    <span id="bg-volume-value" class="text-xs font-bold text-(--btn-content) opacity-70">{bgVolumeDefaultPct}%</span>
+            <div id="bg-volume-panel" class="float-panel float-panel-closed absolute transition-all right-16 p-3 w-64 z-50" data-floating-panel data-floating-panel-trigger="bg-volume-switch" inert aria-hidden="true">
+                <div class="flex items-center justify-between gap-2 px-1">
+                    <span class="text-sm font-medium text-neutral-800 dark:text-neutral-100">{i18n(I18nKey.videoVolume)}</span>
+                    <span id="bg-volume-value" class="text-sm font-mono text-neutral-500 dark:text-neutral-400" aria-live="polite">{bgVolumeDefaultPct}%</span>
                 </div>
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 mt-2">
                     <button
                         type="button"
                         id="bg-volume-mute"
-                        class="btn-plain scale-animation rounded-lg h-8 w-8 shrink-0 active:scale-90"
+                        class="hover:text-(--primary) transition-colors p-0.5 rounded-md flex items-center text-neutral-400 shrink-0"
                         aria-label={i18n(I18nKey.videoMute)}
                         data-i18n-mute={i18n(I18nKey.videoMute)}
                         data-i18n-unmute={i18n(I18nKey.videoUnmute)}
                     >
-                        <span class="bg-volume-mute-icon-on"><Icon name="material-symbols:volume-up-rounded" class="text-[1.125rem]" /></span>
-                        <span class="bg-volume-mute-icon-off hidden"><Icon name="material-symbols:volume-off-rounded" class="text-[1.125rem]" /></span>
+                        <Icon name="material-symbols:volume-up-rounded" class="bg-volume-mute-icon-on text-lg" />
+                        <Icon name="material-symbols:volume-off-rounded" class="bg-volume-mute-icon-off text-lg hidden" />
                     </button>
-                    <input
-                        id="bg-volume-slider"
-                        type="range"
-                        min="0"
-                        max="100"
-                        step="1"
-                        value={String(bgVolumeDefaultPct)}
-                        data-default-volume={String(bgVolumeDefault)}
+                    <div
+                        id="bg-volume-track"
+                        class="flex-1 h-6 flex items-center cursor-pointer touch-none"
+                        role="slider"
+                        tabindex="0"
                         aria-label={i18n(I18nKey.videoVolume)}
-                        class="slider w-full overlay-slider"
-                    />
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow={String(bgVolumeDefaultPct)}
+                        data-default-volume={String(bgVolumeDefault)}
+                    >
+                        <div class="h-1 w-full bg-neutral-300/50 dark:bg-neutral-500/40 rounded-full relative">
+                            <div id="bg-volume-bar" class="absolute left-0 top-0 h-full bg-(--primary) rounded-full" style={`width: ${bgVolumeDefaultPct}%`}></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         )}
@@ -376,14 +380,16 @@ function loadButtonScript() {
     // 背景视频音量面板（滑块 + 静音切换，状态记忆在 localStorage）
     let bgVolumePanel = document.getElementById("bg-volume-panel");
     let bgVolumeBtn = document.getElementById("bg-volume-switch");
-    let bgVolumeSliderEl = document.getElementById("bg-volume-slider") as HTMLInputElement | null;
+    let bgVolumeTrack = document.getElementById("bg-volume-track");
+    let bgVolumeBar = document.getElementById("bg-volume-bar");
     let bgVolumeValueLabel = document.getElementById("bg-volume-value");
     let bgVolumeMuteBtn = document.getElementById("bg-volume-mute");
-    if (bgVolumePanel && bgVolumeBtn && bgVolumeSliderEl) {
+    if (bgVolumePanel && bgVolumeBtn && bgVolumeTrack && bgVolumeBar) {
         const VOLUME_KEY = "bgPlayerVolume";
         const MUTED_KEY = "bgPlayerMuted";
-        const fallbackVolume = Number(bgVolumeSliderEl.getAttribute("data-default-volume") || "0.1");
-        const slider = bgVolumeSliderEl;
+        const fallbackVolume = Number(bgVolumeTrack.getAttribute("data-default-volume") || "0.1");
+        const track = bgVolumeTrack;
+        const bar = bgVolumeBar;
         const btn = bgVolumeBtn;
         const panel = bgVolumePanel;
 
@@ -404,17 +410,11 @@ function loadButtonScript() {
                 localStorage.setItem(MUTED_KEY, bgMuted ? "1" : "0");
             } catch (e) {}
         }
-        function bgUpdateRangeProgress(input: HTMLInputElement) {
-            const min = Number(input.min || 0);
-            const max = Number(input.max || 100);
-            const value = Number(input.value || 0);
-            const progress = ((value - min) * 100) / (max - min || 1);
-            input.style.setProperty("--range-progress", progress + "%");
-        }
         function bgSyncUI() {
             const pct = Math.round(bgVolume * 100);
-            slider.value = String(pct);
-            bgUpdateRangeProgress(slider);
+            // 与音乐播放器音量条同款：细轨道 + 主题色进度条，无原生滑块手柄
+            bar.style.width = pct + "%";
+            track.setAttribute("aria-valuenow", String(pct));
             if (bgVolumeValueLabel) bgVolumeValueLabel.textContent = pct + "%";
 
             const onIcon = btn.querySelector(".bg-volume-icon-on");
@@ -456,14 +456,58 @@ function loadButtonScript() {
             btn.setAttribute("aria-expanded", panel.classList.contains("float-panel-closed") ? "false" : "true");
         };
 
-        slider.oninput = function () {
-            bgVolume = bgClamp(Number(slider.value) / 100);
-            // 拖动滑块视为要出声，自动解除静音
+        function bgApplyVolume(ratio: number) {
+            bgVolume = bgClamp(ratio);
+            // 调节音量视为要出声，自动解除静音
             if (bgMuted && bgVolume > 0) bgMuted = false;
             bgSyncUI();
             bgEmit();
             bgPersist();
-        };
+        }
+
+        function bgSetFromPointer(clientX: number) {
+            const rect = track.getBoundingClientRect();
+            if (!rect.width) return;
+            bgApplyVolume((clientX - rect.left) / rect.width);
+        }
+
+        // 点击 + 按住拖动（pointer capture 保证拖出轨道也能继续跟手）
+        let bgDragging = false;
+        track.addEventListener("pointerdown", function (e) {
+            bgDragging = true;
+            try { track.setPointerCapture(e.pointerId); } catch (err) {}
+            track.focus();
+            bgSetFromPointer(e.clientX);
+            e.preventDefault();
+        });
+        track.addEventListener("pointermove", function (e) {
+            if (!bgDragging) return;
+            bgSetFromPointer(e.clientX);
+        });
+        function bgEndDrag(e: PointerEvent) {
+            if (!bgDragging) return;
+            bgDragging = false;
+            try { track.releasePointerCapture(e.pointerId); } catch (err) {}
+        }
+        track.addEventListener("pointerup", bgEndDrag);
+        track.addEventListener("pointercancel", bgEndDrag);
+
+        // 键盘可达性：方向键微调（Shift 加大步长），Home/End 到两端
+        track.addEventListener("keydown", function (e) {
+            const step = e.shiftKey ? 0.1 : 0.05;
+            if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+                bgApplyVolume(bgVolume + step);
+            } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+                bgApplyVolume(bgVolume - step);
+            } else if (e.key === "Home") {
+                bgApplyVolume(0);
+            } else if (e.key === "End") {
+                bgApplyVolume(1);
+            } else {
+                return;
+            }
+            e.preventDefault();
+        });
 
         if (bgVolumeMuteBtn) {
             bgVolumeMuteBtn.onclick = function () {

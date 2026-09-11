@@ -39,12 +39,14 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 		// 桌面背景图片（支持单张或多张随机）
 		// desktop: "assets/images/DesktopWallpaper/d1.avif",
 		desktop: [
-			"assets/images/DesktopWallpaper/d1.avif",
-			"assets/images/DesktopWallpaper/d2.avif",
-			"assets/images/DesktopWallpaper/d3.avif",
-			"assets/images/DesktopWallpaper/d4.avif",
-			"assets/images/DesktopWallpaper/d5.avif",
-			"assets/images/DesktopWallpaper/d6.avif",
+			"assets/images/gf1.avif",
+			"assets/images/gf2.avif",
+			// "assets/images/DesktopWallpaper/d1.avif",
+			// "assets/images/DesktopWallpaper/d2.avif",
+			// "assets/images/DesktopWallpaper/d3.avif",
+			// "assets/images/DesktopWallpaper/d4.avif",
+			// "assets/images/DesktopWallpaper/d5.avif",
+			// "assets/images/DesktopWallpaper/d6.avif",
 		],
 		// 移动背景图片（支持单张或多张随机）
 		// mobile: "assets/images/MobileWallpaper/m1.avif",
@@ -65,12 +67,26 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 	// 横幅壁纸和全屏壁纸共享配置
 	common: {
 		// 壁纸遮罩暗度，让横幅文字显示更清晰，0-1之间，值越大越暗
-		dimOpacity: 0.2,
+		dimOpacity: 0.5,
 		// 多视频播放模式："order" 顺序循环，"random" 随机切换（仅当 playerUrl 为数组时生效）
 		playerMode: "random",
 		// 背景视频默认音量，0-1之间（0 静音，1 最大）
 		// 仅作为首次访问的默认值，用户拖动导航栏音量滑块后以 localStorage 中记忆的值为准
-		playerVolume: 0.1,
+		// 修改这里会让"没手动调过音量"的访客跟随新默认值（调过的保留自己的选择）
+		playerVolume: 0.01,
+		/**
+		 * 打开页面时自动播放背景视频
+		 * - 直接写 true/false：两端一致
+		 * - 分开写：desktop 桌面端 / mobile 移动端（移动端默认关闭，省流量）
+		 *
+		 * ⚠️ 浏览器自动播放策略：没有用户交互时不允许出声。
+		 * 因此自动播放一律"静音起播"，用户第一次点击/滚动/按键后立刻恢复到你设置的音量。
+		 * 在 Chrome 里，如果你经常访问本站并播放过媒体（MEI 较高），可能会直接带声自动播放。
+		 */
+		playerAutoPlay: {
+			desktop: true,
+			mobile: false,
+		},
 		// 主页横幅文字
 		homeText: {
 			// 是否启用主页横幅文字
@@ -221,7 +237,7 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 			// 导航栏透明模式："semi" 半透明，"semifull" 动态透明（仅首页顶部透明、下滑玻璃化；非首页均跟卡片半透明）
 			transparentMode: "semifull",
 			// 导航栏毛玻璃模糊度，0 即关闭（玻璃态生效）
-			blur: 12,
+			blur: 0,
 		},
 		// 首页下滑时壁纸模糊渐变开关（从 0 渐变为 overlay.blur 的最大模糊）
 		// 关闭后该设备上全屏壁纸保持清晰（首页与非首页都不模糊），设置面板的模糊度滑块也会隐藏
