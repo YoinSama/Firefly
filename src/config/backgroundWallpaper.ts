@@ -2,7 +2,7 @@ import type { BackgroundWallpaperConfig } from "@/types/backgroundWallpaper";
 
 export const backgroundWallpaper: BackgroundWallpaperConfig = {
 	// 壁纸模式："banner" 横幅壁纸，"fullscreen" 全屏壁纸，"overlay" 覆盖透明，"none" 纯色背景无壁纸
-	mode: "banner",
+	mode: "fullscreen",
 	// 是否启用背景视频播放，配置后将在导航栏显示视频播放按钮
 	playerEnable: true,
 	/**
@@ -60,7 +60,7 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 		// 支持单个视频路径（字符串）或多个视频循环（数组，参考上面壁纸配置）
 		// 支持远程视频URL，本地视频请放在 public/assets/videos/ 目录下
 		// playerUrl: "/assets/videos/firefly.mp4",
-		playerUrl: "https://bed.twoleaf.cn/file/1785658612716_firefly.mp4",
+		playerUrl: "/assets/videos/backgroundVideo.mp4",
 	},
 	// 横幅壁纸和全屏壁纸共享配置
 	common: {
@@ -73,29 +73,44 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 			// 是否启用主页横幅文字
 			enable: true,
 			// 主页横幅主标题
-			title: "Lovely firefly!",
+			title: "格里芬 S09 辖区",
 			// 主页横幅主标题字体大小
 			titleSize: "4.5rem",
 			// 主页横幅副标题
 			subtitle: [
-				"In Reddened Chrysalis, I Once Rest",
-				"From Shattered Sky, I Free Fall",
-				"Amidst Silenced Stars, I Deep Sleep",
-				"Upon Lighted Fyrefly, I Soon Gaze",
-				"From Undreamt Night, I Thence Shine",
-				"In Finalized Morrow, I Full Bloom",
+				"为自由开道者，不可令其受困于荆棘。——RO635/慕容雪村 2022冬活 静风点",
+				"一片树叶落下，秋天就不会遥远。——哈维尔 2022冬活 静风点",
+				"人即像树，枝叶越向往光明的天空，根须越深入阴暗的地底。——M16A1/尼采 终局 2018冬活 塌缩点",
+				"你在乱世中独行，又是否热爱过这一切？——第十一章战役：狩猎",
+				"荒谬成就世间之美。——RPK16 Cpt.2星辉重明 2021夏活 熵减焓增",
+				"唯独死亡不可避免，唯独生命不可辜负。——格雷 Cpt.6混沌终局 2021夏活 熵减焓增",
+				"在我之前，已有同路人；在我之后，必有后继者。——指挥官 2022冬活 静风点",
+				"我为打破你周遭的囚墙而来，览尽世界，为你沉沦。——第八章战役：火花",
+				"凡事都别在事后后悔，真正值得后悔的事，会让你根本没有机会后悔。——K 不在场-实相域 2021冬活 镜像论",
+				"“这里沉睡着两个高洁的灵魂。她们用牺牲为世人燃起明烛。”——碑文 Cpt.1净熵减低 2021夏活 熵减焓增",
+				"痛苦如此持久，像蜗牛充满耐心地移动。快乐如此短暂，像兔子的尾巴掠过秋天的草原。——鲁戈萨医生/柳德米拉墓志铭 2022夏活 纵向应变",
+				"老师问我“如果人生注定是一场徒劳，那么挣扎的意义究竟是什么？”我将用一生，来回答这个问题。——安娜 Cpt.3 2023春活 慢休克",
+				"人类终其一生，灵魂都在坠向死亡的途中。就像沙漏里的细沙一样，从一段降落至另一端。——亚瑟·休谟 奢华、宁静与愉悦 2024年特别行动 错构之泉",
+				"人心的交易就是欲望的浮沉。——恩布拉（RPK16） 苍白声部 2024年7月特别行动 零电荷",
+				"未来属于那些改变它的人，别让恐惧成为你无法实现梦想的理由。——旁白/费迪南德·保时捷 潮土油 2024年8月特别行动 银染显影",
+				"真理不惧逆行。——奈乐 破裂 2024年8月特别行动 银染显影",
+				"现在大家早就忘记了什么是理想，成年人之间似乎早就只剩下利益了。——被遗忘的誓言 2024年12月特别行动 卷积核",
+				"强者行其所能为，弱者忍其所必受。——灰烬天堂/《伯罗奔尼撒战争史》 修昔底德 2025年剧情活动 虚粒子对",
+				"彗星袭月，白虹贯日。你从来不缺少尊严与勇气，为了理想，不论前方是何等的荆棘坎途，你都义无反顾。——丹德莱 回忆录“无尽的黑暗彼方” 最终章 零态潮汐",
 			],
 			// 主页横幅副标题字体大小
-			subtitleSize: "1.5rem",
+			subtitleSize: "1rem",
 			typewriter: {
 				// 是否启用打字机效果
-				// 打字机开启 → 循环显示所有副标题
+				// 打字机开启 → 循环/随机显示所有副标题（由 shuffle 控制）
 				// 打字机关闭 → 每次刷新随机显示一条副标题
 				enable: true,
+				// 打字机开启时是否随机播放所有副标题（true=随机洗牌顺序播放，false=顺序循环）
+				shuffle: true,
 				// 打字速度（毫秒）
 				speed: 100,
 				// 删除速度（毫秒）
-				deleteSpeed: 50,
+				deleteSpeed: 10,
 				// 完全显示后的暂停时间（毫秒）
 				pauseTime: 2000,
 			},
@@ -107,34 +122,37 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 				{
 					name: "GitHub",
 					icon: "fa7-brands:github",
-					url: "https://github.com/CuteLeaf/Firefly",
+					url: "https://github.com/YoinSama",
 					showName: true,
 				},
 				{
-					name: "Email",
-					icon: "fa7-solid:envelope",
-					url: "mailto:xiaye@msn.com",
+					name: "QQ",
+					icon: "fa7-brands:qq",
+					url: "https://qm.qq.com/q/i779rkKWoo",
+					showName: true,
 				},
 				{
-					name: "Sponsor",
-					icon: "material-symbols:favorite",
-					url: "https://blog.cuteleaf.cn/sponsor/",
+					name: "Bilibili",
+					icon: "simple-icons:bilibili",
+					url: "https://space.bilibili.com/34481368",
+					showName: true,
 				},
 				{
 					name: "RSS",
 					icon: "fa7-solid:rss",
 					url: "/rss/",
+					showName: true,
 				},
 			],
 		},
 		// 壁纸轮播配置，横幅壁纸和全屏壁纸共享，仅在配置多张图片时生效
 		carousel: {
 			// 是否启用壁纸轮播；关闭时保持每次刷新随机显示一张
-			enable: false,
+			enable: true,
 			// 轮播切换间隔（毫秒）
 			interval: 5000,
 			// 过渡效果: 'fade' 渐变 | 'zoom' 缩放 | 'slide' 滑动 | 'kenburns' 旋转木马
-			transitionEffect: "zoom",
+			transitionEffect: "fade",
 		},
 		// 水波纹动画效果配置，开启会影响页面性能，增加内存占用，请根据自己的喜好开启
 		waves: {
@@ -142,7 +160,7 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 				// 桌面端是否启用水波纹动画效果
 				desktop: true,
 				// 移动端是否启用水波纹动画效果
-				mobile: true,
+				mobile: false,
 			},
 		},
 		// 渐变过渡效果配置，当水波纹关闭时自动启用，提供壁纸底部到背景色的平滑过渡
@@ -185,7 +203,7 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 		// 背景模糊度
 		blur: 10,
 		// 卡片透明度，0-1之间，值越小越透明
-		cardOpacity: 0.6,
+		cardOpacity: 0.8,
 	},
 	// 全屏壁纸模式特有配置
 	// 壁纸模糊度(blur)、卡片透明度(cardOpacity)、层级(zIndex) 复用上方 overlay 模式的配置；
@@ -207,7 +225,7 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 		blurRamp: {
 			enable: {
 				// 桌面端是否启用模糊渐变
-				desktop: true,
+				desktop: false,
 				// 移动端是否启用模糊渐变
 				mobile: true,
 			},

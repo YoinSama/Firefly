@@ -45,11 +45,11 @@ export const profileConfig: ProfileConfig = {
 			url: "https://space.bilibili.com/34481368",
 			showName: true,
 		},
-		{
-			name: "Atom",
-			icon: "fa7-solid:atom",
-			url: "/atom/",
-			showName: false,
-		},
+		// {
+		// 	name: "Atom",
+		// 	icon: "fa7-solid:atom",
+		// 	url: "/atom/",
+		// 	showName: false,
+		// },
 	],
 };

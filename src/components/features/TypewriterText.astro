@@ -4,6 +4,7 @@ export interface Props {
 	speed?: number;
 	deleteSpeed?: number;
 	pauseTime?: number;
+	shuffle?: boolean;
 	class?: string;
 }
 
@@ -12,6 +13,7 @@ const {
 	speed = 100,
 	deleteSpeed = 50,
 	pauseTime = 2000,
+	shuffle = false,
 	class: className = "",
 } = Astro.props;
 const textData = Array.isArray(text) ? JSON.stringify(text) : text;
@@ -22,7 +24,8 @@ const textData = Array.isArray(text) ? JSON.stringify(text) : text;
   data-text={textData}
   data-speed={speed}
   data-delete-speed={deleteSpeed}
-  data-pause-time={pauseTime}></span>
+  data-pause-time={pauseTime}
+  data-shuffle={shuffle}></span>
 
 <script>
   class TypewriterEffect {
@@ -31,10 +34,12 @@ const textData = Array.isArray(text) ? JSON.stringify(text) : text;
     private currentTextIndex: number = 0;
     private speed: number;
     private deleteSpeed: number;
-    private pauseTime: number;
-    private currentIndex: number = 0;
-    private isDeleting: boolean = false;
-    private timeoutId: number | null = null;
+	private pauseTime: number;
+	private shuffle: boolean = false;
+	private queue: number[] = [];
+	private currentIndex: number = 0;
+	private isDeleting: boolean = false;
+	private timeoutId: number | null = null;
 
     constructor(element: HTMLElement) {
       this.element = element;
@@ -50,9 +55,10 @@ const textData = Array.isArray(text) ? JSON.stringify(text) : text;
 
       this.speed = parseInt(element.dataset.speed || "100");
       this.deleteSpeed = parseInt(element.dataset.deleteSpeed || "50");
-      this.pauseTime = parseInt(element.dataset.pauseTime || "2000");
+		this.pauseTime = parseInt(element.dataset.pauseTime || "2000");
+		this.shuffle = element.dataset.shuffle === "true";
 
-      // 如果有多条文本且未启用打字机效果，随机显示一条
+		// 如果有多条文本且未启用打字机效果，随机显示一条
       if (this.texts.length > 1 && !this.isTypewriterEnabled()) {
         this.showRandomText();
       } else {
@@ -79,9 +85,29 @@ const textData = Array.isArray(text) ? JSON.stringify(text) : text;
       this.type();
     }
 
-    private getCurrentText(): string {
-      return this.texts[this.currentTextIndex] || "";
-    }
+	private getCurrentText(): string {
+		return this.texts[this.currentTextIndex] || "";
+	}
+
+	private nextTextIndex(): number {
+		if (this.shuffle) {
+			if (this.queue.length === 0) {
+				// Fisher–Yates 洗牌：把所有下标打乱成一列，播完一轮再重新洗牌
+				this.queue = Array.from({ length: this.texts.length }, (_, i) => i);
+				for (let i = this.queue.length - 1; i > 0; i--) {
+					const j = Math.floor(Math.random() * (i + 1));
+					[this.queue[i], this.queue[j]] = [this.queue[j], this.queue[i]];
+				}
+				// 避免新一轮首条恰好等于刚播完的那条（连续重复）
+				if (this.queue.length > 1 && this.queue[this.queue.length - 1] === this.currentTextIndex) {
+					const k = Math.floor(Math.random() * (this.queue.length - 1));
+					[this.queue[this.queue.length - 1], this.queue[k]] = [this.queue[k], this.queue[this.queue.length - 1]];
+				}
+			}
+			return this.queue.pop() as number;
+		}
+		return (this.currentTextIndex + 1) % this.texts.length;
+	}
 
     private type() {
       const currentText = this.getCurrentText();
@@ -100,11 +126,10 @@ const textData = Array.isArray(text) ? JSON.stringify(text) : text;
             this.deleteSpeed
           );
         } else {
-          // 删除完成，切换到下一条文本
-          this.isDeleting = false;
-          this.currentTextIndex =
-            (this.currentTextIndex + 1) % this.texts.length;
-          this.timeoutId = window.setTimeout(() => this.type(), this.speed);
+			// 删除完成，切换到下一条文本
+			this.isDeleting = false;
+			this.currentTextIndex = this.nextTextIndex();
+			this.timeoutId = window.setTimeout(() => this.type(), this.speed);
         }
       } else {
         if (this.currentIndex < segments.length) {

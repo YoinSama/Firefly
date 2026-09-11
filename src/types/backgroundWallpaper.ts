@@ -26,6 +26,7 @@ export type BackgroundWallpaperConfig = {
 				speed: number; // 打字速度（毫秒）
 				deleteSpeed: number; // 删除速度（毫秒）
 				pauseTime: number; // 完整显示后的暂停时间（毫秒）
+				shuffle?: boolean; // 打字机开启时是否随机播放所有副标题（true=随机洗牌顺序，false/缺省=顺序循环）
 			};
 			// 首页横幅标题下方的链接图标（可选）
 			linksEnable?: boolean; // 是否显示标题下方的链接图标（默认 true）
