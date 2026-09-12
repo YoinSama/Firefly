@@ -140,6 +140,8 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 		var muted = readMuted();
 		// 因浏览器自动播放策略临时静音（区别于用户主动静音），首次用户交互后自动解除
 		var autoMuted = false;
+		// 正在切换音源 / 主动操作：此时的 pause 是预期行为，播放守卫应跳过
+		var switching = false;
 
 		function effectiveMuted() {
 			return muted || autoMuted;
@@ -147,8 +149,23 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 
 		function applyVolume() {
 			video.volume = muted ? 0 : volume;
-			// 静音状态靠 muted 属性保持（自动播放策略下也有效），非静音时解除 play 前设置的临时静音
-			video.muted = effectiveMuted();
+			var nextMuted = effectiveMuted();
+			if (video.muted && !nextMuted && !video.paused) {
+				video.muted = false;
+				// Chrome 在没有用户激活时会拒绝解除静音并直接暂停元素
+				// （控制台报 "Unmuting failed and the element was paused instead"）。
+				// 这里立刻回退到静音并续播，避免"滚一下视频就永远停住"
+				if (video.paused) {
+					video.muted = true;
+					autoMuted = true;
+					notifyVolumeState();
+					var p = video.play();
+					if (p && p.catch) p.catch(stopPlayback);
+				}
+			} else {
+				// 静音状态靠 muted 属性保持（自动播放策略下也有效），非静音时解除 play 前设置的临时静音
+				video.muted = nextMuted;
+			}
 		}
 
 		function notifyVolumeState() {
@@ -210,12 +227,14 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 			// opts.gestureUnlock：静音起播 + 挂"首次用户交互后开声"的解锁（自动播放场景）
 			// 其他场景（用户点了播放按钮，已有交互）：静音起播，play 成功 100ms 后按用户设置恢复声音
 			var gestureUnlock = !!(opts && opts.gestureUnlock);
+			switching = true;
 			video.src = urlList[currentIndex];
 			video.volume = muted ? 0 : volume;
 			video.muted = true;
 			var p = video.play();
 			if (p && p.then) {
 				p.then(function () {
+					switching = false;
 					if (gestureUnlock) {
 						autoMuted = true;
 						notifyVolumeState();
@@ -224,16 +243,21 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 						setTimeout(function () { if (video && isPlaying) applyVolume(); }, 100);
 					}
 				}).catch(function () {
+					switching = false;
 					// 连静音起播都被拒绝（极少数环境）：按用户设置再试一次，仍失败则退回静态壁纸
 					video.muted = effectiveMuted();
 					var p2 = video.play();
 					if (p2 && p2.catch) p2.catch(stopPlayback);
 				});
+			} else {
+				switching = false;
 			}
 		}
 
-		// 自动播放场景：静音起播后，等用户第一次交互（点击/按键/触摸/滚动）再开声
-		var UNLOCK_EVENTS = ["pointerdown", "keydown", "touchstart", "wheel"];
+		// 自动播放场景：静音起播后，等用户第一次交互（点击/按键/触摸）再开声
+		// 注意：wheel / scroll 不算用户交互（Chromium 官方 FAQ 明确排除），
+		// 在滚动里解除静音会被 Chrome 拒绝，并直接把视频暂停
+		var UNLOCK_EVENTS = ["pointerdown", "keydown", "touchstart"];
 		var unlockHandler = null;
 		function armGestureUnlock() {
 			if (unlockHandler || muted) return; // 用户本来就要静音，无需解锁
@@ -352,6 +376,23 @@ const tLoadError = i18n(I18nKey.videoLoadError);
 	});
 		video.addEventListener("ended", onEnded);
 		video.addEventListener("error", onError);
+		// 播放守卫：逻辑上仍处于播放态、但视频被浏览器策略或系统原因暂停时自动恢复，
+		// 避免"暂停后再也没有人负责恢复"。最多重试 3 次，超限则退回静态壁纸
+		var guardTimer = null;
+		var guardRetries = 0;
+		video.addEventListener("pause", function () {
+			if (!isPlaying || video.ended || switching || document.hidden) return;
+			if (guardTimer) return;
+			guardTimer = setTimeout(function () {
+				guardTimer = null;
+				if (!isPlaying || video.ended || !video.paused || switching || document.hidden) return;
+				if (guardRetries >= 3) { guardRetries = 0; stopPlayback(); return; }
+				guardRetries++;
+				video.muted = effectiveMuted();
+				var p = video.play();
+				if (p && p.then) p.then(function () { guardRetries = 0; });
+			}, 150);
+		});
 		// 播放成功时重置错误计数
 		video.addEventListener("playing", function () { errorCount = 0; });
 		if (prevBtn) prevBtn.addEventListener("click", function () { switchTrack(prevIndex()); });
