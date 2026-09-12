@@ -39,24 +39,46 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 		// 桌面背景图片（支持单张或多张随机）
 		// desktop: "assets/images/DesktopWallpaper/d1.avif",
 		desktop: [
-			"assets/images/gf1.avif",
-			"assets/images/gf2.avif",
-			// "assets/images/DesktopWallpaper/d1.avif",
-			// "assets/images/DesktopWallpaper/d2.avif",
-			// "assets/images/DesktopWallpaper/d3.avif",
-			// "assets/images/DesktopWallpaper/d4.avif",
-			// "assets/images/DesktopWallpaper/d5.avif",
-			// "assets/images/DesktopWallpaper/d6.avif",
+			"assets/images/DesktopWallpaper/gf1.avif",
+			"assets/images/DesktopWallpaper/image_1789191456600_1_D.avif",
+			"assets/images/DesktopWallpaper/image_1789191696361_1_D.avif",
+			"assets/images/DesktopWallpaper/image_1789191935778_1_D.avif",
+			"assets/images/DesktopWallpaper/image_1789192278229_1_D.avif",
+			"assets/images/DesktopWallpaper/image_1789192595488_1_D.avif",
+			"assets/images/DesktopWallpaper/image_1789192746107_1_D.avif",
+			"assets/images/DesktopWallpaper/image_1789192991863_1_D.avif",
+			"assets/images/DesktopWallpaper/image_1789193375555_1_D.avif",
+			"assets/images/DesktopWallpaper/image_1789193798931_1_D.avif",
+			"assets/images/DesktopWallpaper/image_1789194232597_1_D.avif",
+			"assets/images/DesktopWallpaper/image_1789194635580_1_D.avif",
+			"assets/images/DesktopWallpaper/image_1789195132867_1_D.avif",
+			"assets/images/DesktopWallpaper/image_1789195426137_1_D.avif",
+			"assets/images/DesktopWallpaper/image_1789195633941_1_D.avif",
+			"assets/images/DesktopWallpaper/image_1789196505629_1_D.avif",
+			"assets/images/DesktopWallpaper/gf2.avif",
+
+
 		],
 		// 移动背景图片（支持单张或多张随机）
 		// mobile: "assets/images/MobileWallpaper/m1.avif",
 		mobile: [
-			"assets/images/MobileWallpaper/m1.avif",
-			"assets/images/MobileWallpaper/m2.avif",
-			"assets/images/MobileWallpaper/m3.avif",
-			"assets/images/MobileWallpaper/m4.avif",
-			"assets/images/MobileWallpaper/m5.avif",
-			"assets/images/MobileWallpaper/m6.avif",
+			"assets/images/MobileWallpaper/gf1_M.avif",
+			"assets/images/MobileWallpaper/image_1789191456600_1_M.avif",
+			"assets/images/MobileWallpaper/image_1789191696361_1_M.avif",
+			"assets/images/MobileWallpaper/image_1789191935778_1_M.avif",
+			"assets/images/MobileWallpaper/image_1789192278229_1_M.avif",
+			"assets/images/MobileWallpaper/image_1789192595488_1_M.avif",
+			"assets/images/MobileWallpaper/image_1789192746107_1_M.avif",
+			"assets/images/MobileWallpaper/image_1789192991863_1_M.avif",
+			"assets/images/MobileWallpaper/image_1789193375555_1_M.avif",
+			"assets/images/MobileWallpaper/image_1789193798931_1_M.avif",
+			"assets/images/MobileWallpaper/image_1789194232597_1_M.avif",
+			"assets/images/MobileWallpaper/image_1789194635580_1_M.avif",
+			"assets/images/MobileWallpaper/image_1789195132867_1_M.avif",
+			"assets/images/MobileWallpaper/image_1789195426137_1_M.avif",
+			"assets/images/MobileWallpaper/image_1789195633941_1_M.avif",
+			"assets/images/MobileWallpaper/image_1789196505629_1_M.avif",
+			"assets/images/MobileWallpaper/gf2_M.avif",
 		],
 		// 背景视频播放地址
 		// 支持单个视频路径（字符串）或多个视频循环（数组，参考上面壁纸配置）
@@ -67,7 +89,7 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
 	// 横幅壁纸和全屏壁纸共享配置
 	common: {
 		// 壁纸遮罩暗度，让横幅文字显示更清晰，0-1之间，值越大越暗
-		dimOpacity: 0.5,
+		dimOpacity: 0.3,
 		// 多视频播放模式："order" 顺序循环，"random" 随机切换（仅当 playerUrl 为数组时生效）
 		playerMode: "random",
 		// 背景视频默认音量，0-1之间（0 静音，1 最大）
