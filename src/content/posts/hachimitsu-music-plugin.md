@@ -1,10 +1,10 @@
 ---
-title: 从零使用AI开发一个 QQ 群点歌插件：哈基米音乐点歌开发复盘
+title: 从零使用 AI 开发一个 QQ 群哈基米音乐点歌插件的开发复盘
 published: 2026-09-18
-description: 记录给 AstrBot 写一个哈基米音乐点歌插件的过程：怎么从 Notion 站点里把一万三千条榜单挖出来、怎么用 B站 DASH 匿名取音频、那些"点了没反应"的 bug 背后到底是什么。后半部分是安装与使用说明。
-image: 在这里粘贴封面图床链接
-tags: [AstrBot, Python, QQ机器人, 插件开发, 踩坑记录]
-category: 开发
+description: 记录 AstrBot 框架下哈基米音乐点歌插件的开发过程。后半部分是安装与使用说明。
+image: ./images/hajimi_cover.avif
+tags: [AstrBot, Python, QQbot, 插件开发, 踩坑记录]
+category: 开发笔记
 slug: hachimitsu-music-plugin
 ---
 
@@ -26,7 +26,6 @@ slug: hachimitsu-music-plugin
 
 ### 一、先搞清楚数据从哪来
 
-动手前先花了一轮把数据源摸清楚。
 
 **榜单是一个 Notion 数据库。** 站点 `hajihami.com` 是 Notion 公开站点套壳，服务端给 HTML 框架，正文全靠 JS 加载。首页 DOM 里只嵌了 6 个示例播放器，完整榜单在数据库视图里，所以得走接口。
 
@@ -131,9 +130,9 @@ SQLite 搜索快 15 倍，随机取歌慢 47 倍，而随机取歌是每次点�
 
 最后用的是 **base64 直发 record 段**，降级链也明确了：`base64 record` → `Comp.Record`（仅兜底）→ 只发文字信息。
 
-还有一件事没自己造：协议端（SnowLuma / NapCat）会自动把音频转成 silk 上传。自己提前转一个非标准 silk，手机端播不了，时长还会被钳到 1 秒，所以交给协议端处理。
+协议端（SnowLuma / NapCat）会自动把音频转成 silk 上传。自己提前转一个非标准 silk，手机端播不了，时长还会被钳到 1 秒，所以交给协议端处理。
 
-#### 6. 两个"点了没反应"的按钮
+#### 6. 两个“失效”的按钮
 
 控制台问题：保存配置没反应，重置全部点了没动静。查下去是两个完全独立的原因。
 
