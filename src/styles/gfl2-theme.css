@@ -1,0 +1,204 @@
+/* ============================================================
+   GFL2 追放风格主题覆盖层
+   蒸馏自 gf2.sunborngame.com / gf2-mobile.sunborngame.com 实测样式
+   设计令牌速查见：D:\Dev\少女前线UI蒸馏skills\.agents\skills\gf2-exilium-web-style
+
+   兼容性说明：
+   - 暗色/亮色全部成对定义为 :root.dark 与 :root:not(.dark)，
+     跟随主题切换按钮翻转的 .dark 类自动生效，无 JS 参与。
+   - 色相不在本文件钉死：siteConfig.ts themeColor.hue=45 是唯一色源，
+     站内设置面板的调色功能不受影响（用户自选色相时 oklch 部分跟随，
+     本文件中固定橙色的强调件保持品牌橙）。
+   ============================================================ */
+
+/* ---------- 1. 全局形状：直角美学 ---------- */
+:root {
+  --radius-large: 3px !important; /* 卡片圆角 1rem → 3px；头像/圆点仍为圆形 */
+  --primary: oklch(0.68 0.17 45) !important; /* #F26C1C 品牌橙 */
+  --title-active: #f26c1c !important;
+}
+
+/* ---------- 2. 暗色模式（HUD 深青黑） ---------- */
+:root.dark {
+  --page-bg: #0f1a1e !important; /* 深青黑主底 */
+  --card-bg: #1a2c33 !important; /* 暗面板 */
+  --card-bg-transparent: rgb(26 44 51 / 0.92) !important;
+  --btn-content: #ffb48a !important;
+  --btn-regular-bg: rgba(242, 108, 28, 0.16) !important;
+  --btn-regular-bg-hover: rgba(242, 108, 28, 0.26) !important;
+  --btn-regular-bg-active: rgba(242, 108, 28, 0.34) !important;
+  --btn-plain-bg-hover: rgba(242, 108, 28, 0.12) !important;
+  --btn-plain-bg-active: rgba(242, 108, 28, 0.18) !important;
+  --btn-card-bg-hover: #223038 !important;
+  --btn-card-bg-active: #2a3942 !important;
+  --enter-btn-bg: rgba(242, 108, 28, 0.16) !important;
+  --enter-btn-bg-hover: rgba(242, 108, 28, 0.26) !important;
+  --deep-text: #efefef !important;
+  --line-color: rgba(255, 255, 255, 0.1) !important;
+  --line-divider: rgba(255, 255, 255, 0.08) !important;
+  --meta-divider: rgba(255, 255, 255, 0.22) !important;
+  --content-meta: rgba(239, 239, 239, 0.68) !important;
+  --inline-code-bg: rgba(242, 108, 28, 0.14) !important;
+  --inline-code-color: #ff9b5e !important;
+  --muted: #16232a !important;
+  --selection-bg: rgba(242, 108, 28, 0.35) !important;
+  --codeblock-bg: #0b1418 !important;
+  --codeblock-topbar-bg: #101b21 !important;
+  --toc-badge-bg: rgba(242, 108, 28, 0.16) !important;
+  --toc-item-active: #f26c1c !important;
+  --link-underline: rgba(242, 108, 28, 0.35) !important;
+}
+
+/* ---------- 3. 亮色模式（官网「白档案面板」） ---------- */
+:root:not(.dark) {
+  --page-bg: #efefef !important; /* 官网世界观面板纸灰白 */
+  --card-bg: #ffffff !important;
+  --card-bg-transparent: rgb(255 255 255 / 0.92) !important;
+  --btn-content: #c25312 !important; /* 深橙，保证浅底对比度 */
+  --btn-regular-bg: rgba(242, 108, 28, 0.14) !important;
+  --btn-regular-bg-hover: rgba(242, 108, 28, 0.24) !important;
+  --btn-regular-bg-active: rgba(242, 108, 28, 0.32) !important;
+  --btn-plain-bg-hover: rgba(242, 108, 28, 0.1) !important;
+  --btn-plain-bg-active: rgba(242, 108, 28, 0.16) !important;
+  --btn-card-bg-hover: #f5f0ec !important;
+  --btn-card-bg-active: #ede4dc !important;
+  --enter-btn-bg: rgba(242, 108, 28, 0.14) !important;
+  --enter-btn-bg-hover: rgba(242, 108, 28, 0.24) !important;
+  --deep-text: #0f1a1e !important;
+  --line-divider: rgba(15, 26, 30, 0.08) !important;
+  --line-color: rgba(15, 26, 30, 0.1) !important;
+  --meta-divider: rgba(15, 26, 30, 0.22) !important;
+  --content-meta: rgba(15, 26, 30, 0.7) !important;
+  --inline-code-bg: rgba(242, 108, 28, 0.12) !important;
+  --inline-code-color: #b34a0e !important;
+  --muted: #e2e0dd !important;
+  --selection-bg: rgba(242, 108, 28, 0.3) !important;
+  --codeblock-bg: #0b1418 !important; /* 代码块两模式共用深色 HUD 块 */
+  --codeblock-topbar-bg: #101b21 !important;
+  --license-block-bg: rgba(15, 26, 30, 0.04) !important;
+  --link-underline: rgba(242, 108, 28, 0.35) !important;
+  --toc-badge-bg: rgba(242, 108, 28, 0.14) !important;
+  --toc-item-active: #f26c1c !important;
+  --toc-btn-hover: rgba(242, 108, 28, 0.1) !important;
+  --toc-btn-active: rgba(242, 108, 28, 0.16) !important;
+  --toc-indicator-bg: rgba(15, 26, 30, 0.08) !important;
+  --float-panel-bg: #ffffff !important;
+}
+
+/* ---------- 4. 字体：思源黑体（GFL2 官网同款字族） ---------- */
+body,
+.banner-title,
+#navbar {
+  font-family:
+    "Noto Sans SC Variable", "Noto Sans SC", "Source Han Sans SC", "思源黑体",
+    "PingFang SC", "Microsoft YaHei", sans-serif !important;
+}
+
+/* ---------- 5. 页面底 + HUD 竖线网格（分模式） ---------- */
+:root.dark body {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.038) 1px, transparent 1px) 0 0 /
+      calc(100vw / 9) 100%,
+    #0f1a1e !important;
+  background-attachment: fixed !important;
+}
+:root:not(.dark) body {
+  background:
+    linear-gradient(rgba(15, 26, 30, 0.05) 1px, transparent 1px) 0 0 /
+      calc(100vw / 9) 100%,
+    #efefef !important;
+  background-attachment: fixed !important;
+}
+
+/* ---------- 6. 卡片：直角 + 细描边 + 去投影 ---------- */
+:root.dark .card-base {
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 3px !important;
+  box-shadow: none !important;
+}
+:root:not(.dark) .card-base {
+  border: 1px solid rgba(15, 26, 30, 0.14) !important;
+  border-radius: 3px !important;
+  box-shadow: none !important;
+}
+
+/* ---------- 7. 按钮直角化（保留头像/圆点/圆形播放键） ---------- */
+[class*="btn-regular"],
+[class*="btn-card"],
+[class*="btn-plain"],
+[class*="btn-play"] {
+  border-radius: 3px !important;
+}
+
+/* ---------- 8. 导航栏：表面色交还给主题原生机制 ----------
+   navbar.css 中 #navbar>div 的背景 = var(--card-bg)，
+   亮色自动为白、暗色自动为深面板，并保留原生毛玻璃/透明模式。
+   此处只做直角化，不再强制底色。 */
+#navbar a[class*="btn"],
+#navbar button[class*="btn"] {
+  border-radius: 3px !important;
+}
+
+/* ---------- 9. 横幅：扫描线 + 标题疏排 ---------- */
+#wallpaper-wrapper::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  z-index: 30 !important;
+}
+:root.dark #wallpaper-wrapper::after {
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.04) 0 1px,
+    transparent 1px 3px
+  ) !important;
+}
+:root:not(.dark) #wallpaper-wrapper::after {
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.035) 0 1px,
+    transparent 1px 3px
+  ) !important;
+}
+.banner-title {
+  letter-spacing: 0.1em !important;
+  font-weight: 900 !important;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* ---------- 10. 文章卡标题：橙色左标条 ---------- */
+.post-card-title {
+  position: relative;
+  padding-left: 14px !important;
+}
+.post-card-title::before {
+  content: "" !important;
+  position: absolute;
+  left: 0;
+  top: 0.18em;
+  bottom: 0.12em;
+  width: 4px;
+  background: #f26c1c;
+}
+
+/* ---------- 11. 杂项直角化 ---------- */
+[class*="chip"],
+a[class*="tag"] {
+  border-radius: 2px !important;
+}
+
+/* ---------- 12. 页脚：融入页面背景 + 橙色上边线 ----------
+   背景设为透明，透出 body 的底色与 HUD 网格线，
+   亮/暗模式自动与页面背景完全一致，无需分别维护颜色 */
+/* ---------- 12. 页脚：融入页面背景（无底色无边框） ---------- */
+.site-footer {
+  background: transparent !important;
+}
+
+/* ---------- 13. 页脚：去除虚线装饰，保留原 Firefly 间距节奏 ----------
+   分隔条与版权框只去边框、不隐藏元素——空分隔条自带 margin，
+   分页与页脚之间的间距与原版 Firefly 保持一致 */
+.site-footer .border-dashed {
+  border: none !important;
+}

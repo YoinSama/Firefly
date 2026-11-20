@@ -9,6 +9,8 @@
 @import './display-settings.css';
 @import './categories.css';
 @import './layout-base.css';
+/* GFL2 追放风格覆盖层（暗/亮双模式，跟随 .dark 类切换）——最后导入以获得覆盖权 */
+@import './gfl2-theme.css';
 
 @plugin '@tailwindcss/typography';
 
